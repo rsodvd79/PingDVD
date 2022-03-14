@@ -7,7 +7,7 @@ Public Class FormMain
 
     Dim values As New List(Of Long)
 
-    Private Sub ButtonButtonStartStop_Click(sender As Object, e As EventArgs) Handles ButtonStartStop.Click
+    Private Sub ButtonStartStop_Click(sender As Object, e As EventArgs) Handles ButtonStartStop.Click
         TimerMain.Interval = Math.Max(1, CInt("0" & TextBoxInterval.Text))
         TimerMain.Enabled = Not TimerMain.Enabled
 
