@@ -8,7 +8,12 @@ Public Class FormMain
     Dim values As New List(Of Long)
 
     Private Sub ButtonStartStop_Click(sender As Object, e As EventArgs) Handles ButtonStartStop.Click
-        TimerMain.Interval = Math.Max(1, CInt("0" & TextBoxInterval.Text))
+        If IsNumeric(TextBoxInterval.Text) Then
+            TimerMain.Interval = Math.Max(1, CInt("0" & TextBoxInterval.Text))
+        Else
+            TimerMain.Interval = 1
+        End If
+
         TimerMain.Enabled = Not TimerMain.Enabled
 
     End Sub
@@ -20,7 +25,14 @@ Public Class FormMain
             Dim buffer As Byte() = Encoding.ASCII.GetBytes(StrDup(32, Chr(0)))
 
             Dim pingSender As Ping = New Ping()
-            Dim reply As PingReply = pingSender.Send(TextBoxHost.Text, Math.Max(1, CInt("0" & TextBoxTimeout.Text)), buffer, options)
+
+            Dim timeout As Integer = 1
+
+            If IsNumeric(TextBoxTimeout.Text) Then
+                timeout = Math.Max(1, CInt("0" & TextBoxTimeout.Text))
+            End If
+
+            Dim reply As PingReply = pingSender.Send(TextBoxHost.Text, timeout, buffer, options)
 
             If reply.Status = IPStatus.Success Then
                 values.Add(reply.RoundtripTime)
