@@ -36,7 +36,7 @@ Partial Class FormMain
         Me.TextBoxTimeout = New System.Windows.Forms.TextBox()
         Me.Label3 = New System.Windows.Forms.Label()
         Me.TextBoxInterval = New System.Windows.Forms.TextBox()
-        Me.Button1 = New System.Windows.Forms.Button()
+        Me.ButtonStartStop = New System.Windows.Forms.Button()
         CType(Me.ChartMain, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.TableLayoutPanel1.SuspendLayout()
         Me.TableLayoutPanel2.SuspendLayout()
@@ -67,7 +67,7 @@ Partial Class FormMain
         Series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
         Series1.Name = "SeriesPing"
         Me.ChartMain.Series.Add(Series1)
-        Me.ChartMain.Size = New System.Drawing.Size(794, 418)
+        Me.ChartMain.Size = New System.Drawing.Size(798, 418)
         Me.ChartMain.TabIndex = 1
         Me.ChartMain.Text = "Chart1"
         '
@@ -109,14 +109,14 @@ Partial Class FormMain
         Me.TableLayoutPanel2.Controls.Add(Me.TextBoxTimeout, 3, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.Label3, 4, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.TextBoxInterval, 5, 0)
-        Me.TableLayoutPanel2.Controls.Add(Me.Button1, 7, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.ButtonStartStop, 7, 0)
         Me.TableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Top
         Me.TableLayoutPanel2.Location = New System.Drawing.Point(0, 0)
         Me.TableLayoutPanel2.Margin = New System.Windows.Forms.Padding(0)
         Me.TableLayoutPanel2.Name = "TableLayoutPanel2"
         Me.TableLayoutPanel2.RowCount = 1
         Me.TableLayoutPanel2.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.TableLayoutPanel2.Size = New System.Drawing.Size(800, 26)
+        Me.TableLayoutPanel2.Size = New System.Drawing.Size(804, 26)
         Me.TableLayoutPanel2.TabIndex = 2
         '
         'Label1
@@ -135,14 +135,14 @@ Partial Class FormMain
         Me.TextBoxHost.Dock = System.Windows.Forms.DockStyle.Top
         Me.TextBoxHost.Location = New System.Drawing.Point(38, 3)
         Me.TextBoxHost.Name = "TextBoxHost"
-        Me.TextBoxHost.Size = New System.Drawing.Size(127, 20)
+        Me.TextBoxHost.Size = New System.Drawing.Size(128, 20)
         Me.TextBoxHost.TabIndex = 1
         '
         'Label2
         '
         Me.Label2.AutoSize = True
         Me.Label2.Dock = System.Windows.Forms.DockStyle.Right
-        Me.Label2.Location = New System.Drawing.Point(171, 0)
+        Me.Label2.Location = New System.Drawing.Point(172, 0)
         Me.Label2.Name = "Label2"
         Me.Label2.Size = New System.Drawing.Size(45, 26)
         Me.Label2.TabIndex = 2
@@ -152,9 +152,9 @@ Partial Class FormMain
         'TextBoxTimeout
         '
         Me.TextBoxTimeout.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TextBoxTimeout.Location = New System.Drawing.Point(222, 3)
+        Me.TextBoxTimeout.Location = New System.Drawing.Point(223, 3)
         Me.TextBoxTimeout.Name = "TextBoxTimeout"
-        Me.TextBoxTimeout.Size = New System.Drawing.Size(127, 20)
+        Me.TextBoxTimeout.Size = New System.Drawing.Size(128, 20)
         Me.TextBoxTimeout.TabIndex = 3
         Me.TextBoxTimeout.Text = "120"
         '
@@ -162,7 +162,7 @@ Partial Class FormMain
         '
         Me.Label3.AutoSize = True
         Me.Label3.Dock = System.Windows.Forms.DockStyle.Right
-        Me.Label3.Location = New System.Drawing.Point(355, 0)
+        Me.Label3.Location = New System.Drawing.Point(357, 0)
         Me.Label3.Name = "Label3"
         Me.Label3.Size = New System.Drawing.Size(42, 26)
         Me.Label3.TabIndex = 4
@@ -172,22 +172,22 @@ Partial Class FormMain
         'TextBoxInterval
         '
         Me.TextBoxInterval.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TextBoxInterval.Location = New System.Drawing.Point(403, 3)
+        Me.TextBoxInterval.Location = New System.Drawing.Point(405, 3)
         Me.TextBoxInterval.Name = "TextBoxInterval"
-        Me.TextBoxInterval.Size = New System.Drawing.Size(127, 20)
+        Me.TextBoxInterval.Size = New System.Drawing.Size(128, 20)
         Me.TextBoxInterval.TabIndex = 5
         Me.TextBoxInterval.Text = "500"
         '
-        'Button1
+        'ButtonStartStop
         '
-        Me.Button1.Dock = System.Windows.Forms.DockStyle.Top
-        Me.Button1.Location = New System.Drawing.Point(666, 0)
-        Me.Button1.Margin = New System.Windows.Forms.Padding(0, 0, 3, 0)
-        Me.Button1.Name = "Button1"
-        Me.Button1.Size = New System.Drawing.Size(131, 23)
-        Me.Button1.TabIndex = 6
-        Me.Button1.Text = "Start\Stop"
-        Me.Button1.UseVisualStyleBackColor = True
+        Me.ButtonStartStop.Dock = System.Windows.Forms.DockStyle.Top
+        Me.ButtonStartStop.Location = New System.Drawing.Point(670, 0)
+        Me.ButtonStartStop.Margin = New System.Windows.Forms.Padding(0, 0, 3, 0)
+        Me.ButtonStartStop.Name = "ButtonStartStop"
+        Me.ButtonStartStop.Size = New System.Drawing.Size(131, 23)
+        Me.ButtonStartStop.TabIndex = 6
+        Me.ButtonStartStop.Text = "Start\Stop"
+        Me.ButtonStartStop.UseVisualStyleBackColor = True
         '
         'FormMain
         '
@@ -217,5 +217,5 @@ Partial Class FormMain
     Friend WithEvents TextBoxTimeout As TextBox
     Friend WithEvents Label3 As Label
     Friend WithEvents TextBoxInterval As TextBox
-    Friend WithEvents Button1 As Button
+    Friend WithEvents ButtonStartStop As Button
 End Class
