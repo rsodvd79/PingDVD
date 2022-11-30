@@ -56,6 +56,7 @@ Partial Class FormMain
         ChartArea1.AxisY.IsMarginVisible = False
         ChartArea1.AxisY.IsStartedFromZero = False
         ChartArea1.AxisY.MajorGrid.LineColor = System.Drawing.Color.Silver
+        ChartArea1.AxisY.Minimum = 0R
         ChartArea1.AxisY.MinorGrid.LineColor = System.Drawing.Color.Silver
         ChartArea1.Name = "ChartArea1"
         Me.ChartMain.ChartAreas.Add(ChartArea1)

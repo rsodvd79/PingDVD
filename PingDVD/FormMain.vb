@@ -14,6 +14,14 @@ Public Class FormMain
             TimerMain.Interval = 1
         End If
 
+        Dim timeout As Integer = 1
+
+        If IsNumeric(TextBoxTimeout.Text) Then
+            timeout = Math.Max(1, CInt("0" & TextBoxTimeout.Text))
+        End If
+
+        ChartMain.ChartAreas(0).AxisY.Maximum = timeout
+
         TimerMain.Enabled = Not TimerMain.Enabled
 
     End Sub
@@ -37,7 +45,7 @@ Public Class FormMain
             If reply.Status = IPStatus.Success Then
                 values.Add(reply.RoundtripTime)
             Else
-                values.Add(0)
+                values.Add(timeout)
             End If
 
         Catch ex As Exception
