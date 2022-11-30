@@ -77,10 +77,14 @@ Public Class FormMain
         ChartMain.SuspendLayout()
 
         ChartMain.Series(0).Points.Clear()
+        ChartMain.Series(1).Points.Clear()
 
         For Each vl As Long In values
             ChartMain.Series(0).Points.AddY(vl)
+            ChartMain.Series(1).Points.AddY(values.Average())
         Next
+
+        Me.Text = $"PingDVD - AVG : {Math.Round(values.Average(), 2)} - LAST : {values.Last} - MIN : {values.Min} - MAX : {values.Max}"
 
         ChartMain.ResumeLayout()
 

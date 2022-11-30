@@ -25,6 +25,7 @@ Partial Class FormMain
         Me.components = New System.ComponentModel.Container()
         Dim ChartArea1 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
         Dim Series1 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
+        Dim Series2 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormMain))
         Me.ChartMain = New System.Windows.Forms.DataVisualization.Charting.Chart()
         Me.TimerMain = New System.Windows.Forms.Timer(Me.components)
@@ -67,7 +68,12 @@ Partial Class FormMain
         Series1.ChartArea = "ChartArea1"
         Series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
         Series1.Name = "SeriesPing"
+        Series2.ChartArea = "ChartArea1"
+        Series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
+        Series2.Color = System.Drawing.Color.Red
+        Series2.Name = "SeriesCuSum"
         Me.ChartMain.Series.Add(Series1)
+        Me.ChartMain.Series.Add(Series2)
         Me.ChartMain.Size = New System.Drawing.Size(798, 418)
         Me.ChartMain.TabIndex = 1
         Me.ChartMain.Text = "Chart1"
@@ -93,17 +99,15 @@ Partial Class FormMain
         '
         'TableLayoutPanel2
         '
-        Me.TableLayoutPanel2.AutoSize = True
-        Me.TableLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.TableLayoutPanel2.ColumnCount = 8
         Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
         Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
         Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
         Me.TableLayoutPanel2.Controls.Add(Me.Label1, 0, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.TextBoxHost, 1, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.Label2, 2, 0)
@@ -136,14 +140,15 @@ Partial Class FormMain
         Me.TextBoxHost.Dock = System.Windows.Forms.DockStyle.Top
         Me.TextBoxHost.Location = New System.Drawing.Point(38, 3)
         Me.TextBoxHost.Name = "TextBoxHost"
-        Me.TextBoxHost.Size = New System.Drawing.Size(128, 20)
+        Me.TextBoxHost.Size = New System.Drawing.Size(161, 20)
         Me.TextBoxHost.TabIndex = 1
+        Me.TextBoxHost.Text = "www.google.it"
         '
         'Label2
         '
         Me.Label2.AutoSize = True
         Me.Label2.Dock = System.Windows.Forms.DockStyle.Right
-        Me.Label2.Location = New System.Drawing.Point(172, 0)
+        Me.Label2.Location = New System.Drawing.Point(205, 0)
         Me.Label2.Name = "Label2"
         Me.Label2.Size = New System.Drawing.Size(45, 26)
         Me.Label2.TabIndex = 2
@@ -153,9 +158,9 @@ Partial Class FormMain
         'TextBoxTimeout
         '
         Me.TextBoxTimeout.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TextBoxTimeout.Location = New System.Drawing.Point(223, 3)
+        Me.TextBoxTimeout.Location = New System.Drawing.Point(256, 3)
         Me.TextBoxTimeout.Name = "TextBoxTimeout"
-        Me.TextBoxTimeout.Size = New System.Drawing.Size(128, 20)
+        Me.TextBoxTimeout.Size = New System.Drawing.Size(161, 20)
         Me.TextBoxTimeout.TabIndex = 3
         Me.TextBoxTimeout.Text = "120"
         '
@@ -163,7 +168,7 @@ Partial Class FormMain
         '
         Me.Label3.AutoSize = True
         Me.Label3.Dock = System.Windows.Forms.DockStyle.Right
-        Me.Label3.Location = New System.Drawing.Point(357, 0)
+        Me.Label3.Location = New System.Drawing.Point(423, 0)
         Me.Label3.Name = "Label3"
         Me.Label3.Size = New System.Drawing.Size(42, 26)
         Me.Label3.TabIndex = 4
@@ -173,19 +178,19 @@ Partial Class FormMain
         'TextBoxInterval
         '
         Me.TextBoxInterval.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TextBoxInterval.Location = New System.Drawing.Point(405, 3)
+        Me.TextBoxInterval.Location = New System.Drawing.Point(471, 3)
         Me.TextBoxInterval.Name = "TextBoxInterval"
-        Me.TextBoxInterval.Size = New System.Drawing.Size(128, 20)
+        Me.TextBoxInterval.Size = New System.Drawing.Size(161, 20)
         Me.TextBoxInterval.TabIndex = 5
-        Me.TextBoxInterval.Text = "500"
+        Me.TextBoxInterval.Text = "200"
         '
         'ButtonStartStop
         '
         Me.ButtonStartStop.Dock = System.Windows.Forms.DockStyle.Top
-        Me.ButtonStartStop.Location = New System.Drawing.Point(670, 0)
+        Me.ButtonStartStop.Location = New System.Drawing.Point(635, 0)
         Me.ButtonStartStop.Margin = New System.Windows.Forms.Padding(0, 0, 3, 0)
         Me.ButtonStartStop.Name = "ButtonStartStop"
-        Me.ButtonStartStop.Size = New System.Drawing.Size(131, 23)
+        Me.ButtonStartStop.Size = New System.Drawing.Size(166, 23)
         Me.ButtonStartStop.TabIndex = 6
         Me.ButtonStartStop.Text = "Start\Stop"
         Me.ButtonStartStop.UseVisualStyleBackColor = True
@@ -202,7 +207,6 @@ Partial Class FormMain
         Me.Text = "PingDVD"
         CType(Me.ChartMain, System.ComponentModel.ISupportInitialize).EndInit()
         Me.TableLayoutPanel1.ResumeLayout(False)
-        Me.TableLayoutPanel1.PerformLayout()
         Me.TableLayoutPanel2.ResumeLayout(False)
         Me.TableLayoutPanel2.PerformLayout()
         Me.ResumeLayout(False)
