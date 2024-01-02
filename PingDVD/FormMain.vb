@@ -127,7 +127,7 @@ Public Class FormMain
             ChartMain.Series(1).Points.AddY(values.Average())
         Next
 
-        Me.Text = $"PingDVD - AVG : {Math.Round(values.Average(), 2)} - LAST : {values.Last} - MIN : {values.Min} - MAX : {values.Max}"
+        Me.Text = $"PingDVD - AVG : {Math.Round(values.Average(), 2)} - LAST : {values.Last} - MIN : {values.Min} - MAX : {values.Max} (msec)"
 
         ChartMain.ResumeLayout()
 
