@@ -1,4 +1,5 @@
 ﻿Imports System
+Imports System.Configuration
 Imports System.Net
 Imports System.Net.NetworkInformation
 Imports System.Text
@@ -7,20 +8,45 @@ Public Class FormMain
 
     Dim values As New List(Of Long)
 
+    Public Sub New()
+        ' La chiamata è richiesta dalla finestra di progettazione.
+        InitializeComponent()
+
+        ' Aggiungere le eventuali istruzioni di inizializzazione dopo la chiamata a InitializeComponent().
+        ForeColor = Color.FromArgb(245, 246, 250)
+        BackColor = Color.FromArgb(47, 54, 64)
+
+        TextBoxHost.ForeColor = ForeColor
+        TextBoxHost.BackColor = BackColor
+
+        NumericUpDownInterval.ForeColor = ForeColor
+        NumericUpDownInterval.BackColor = BackColor
+
+        NumericUpDownTimeOut.ForeColor = ForeColor
+        NumericUpDownTimeOut.BackColor = BackColor
+
+        ChartMain.ForeColor = ForeColor
+        ChartMain.BackColor = BackColor
+
+        ChartMain.ChartAreas(0).BackColor = BackColor
+
+        ChartMain.ChartAreas(0).AxisY.InterlacedColor = ForeColor
+        ChartMain.ChartAreas(0).AxisY.LabelStyle.ForeColor = ForeColor
+        ChartMain.ChartAreas(0).AxisY.LineColor = ForeColor
+        ChartMain.ChartAreas(0).AxisY.MajorTickMark.LineColor = ForeColor
+
+        ChartMain.ChartAreas(0).AxisX.InterlacedColor = ForeColor
+        ChartMain.ChartAreas(0).AxisX.LabelStyle.ForeColor = ForeColor
+        ChartMain.ChartAreas(0).AxisX.LineColor = ForeColor
+        ChartMain.ChartAreas(0).AxisX.MajorTickMark.LineColor = ForeColor
+
+    End Sub
+
     Private Sub ButtonStartStop_Click(sender As Object, e As EventArgs) Handles ButtonStartStop.Click
-        If IsNumeric(TextBoxInterval.Text) Then
-            TimerMain.Interval = Math.Max(1, CInt("0" & TextBoxInterval.Text))
-        Else
-            TimerMain.Interval = 1
-        End If
 
-        Dim timeout As Integer = 1
+        TimerMain.Interval = CInt(NumericUpDownInterval.Value)
 
-        If IsNumeric(TextBoxTimeout.Text) Then
-            timeout = Math.Max(1, CInt("0" & TextBoxTimeout.Text))
-        End If
-
-        ChartMain.ChartAreas(0).AxisY.Maximum = timeout
+        ChartMain.ChartAreas(0).AxisY.Maximum = NumericUpDownTimeOut.Value
 
         TimerMain.Enabled = Not TimerMain.Enabled
 
@@ -34,11 +60,7 @@ Public Class FormMain
 
             Dim pingSender As Ping = New Ping()
 
-            Dim timeout As Integer = 1
-
-            If IsNumeric(TextBoxTimeout.Text) Then
-                timeout = Math.Max(1, CInt("0" & TextBoxTimeout.Text))
-            End If
+            Dim timeout As Integer = CInt(NumericUpDownTimeOut.Value)
 
             Dim reply As PingReply = pingSender.Send(TextBoxHost.Text, timeout, buffer, options)
 
@@ -62,6 +84,27 @@ Public Class FormMain
     End Sub
 
     Private Sub FormMain_Load(sender As Object, e As EventArgs) Handles Me.Load
+        Dim conf As Configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None)
+        Dim sett As KeyValueConfigurationCollection = conf.AppSettings.Settings
+
+        If sett("Interval") Is Nothing Then
+            sett.Add("Interval", NumericUpDownInterval.Value.ToString(Globalization.CultureInfo.InvariantCulture))
+        Else
+            NumericUpDownInterval.Value = CDec(sett("Interval").Value)
+        End If
+
+        If sett("TimeOut") Is Nothing Then
+            sett.Add("TimeOut", NumericUpDownTimeOut.Value.ToString(Globalization.CultureInfo.InvariantCulture))
+        Else
+            NumericUpDownTimeOut.Value = CDec(sett("TimeOut").Value)
+        End If
+
+        If sett("Host") Is Nothing Then
+            sett.Add("Host", TextBoxHost.Text)
+        Else
+            TextBoxHost.Text = sett("Host").Value
+        End If
+
         Dim lv As Long = 11
 
         For vl As Long = 1 To 500
@@ -87,6 +130,49 @@ Public Class FormMain
         Me.Text = $"PingDVD - AVG : {Math.Round(values.Average(), 2)} - LAST : {values.Last} - MIN : {values.Min} - MAX : {values.Max}"
 
         ChartMain.ResumeLayout()
+
+    End Sub
+
+    'Private Sub NumericUpDownInterval_ValueChanged(sender As Object, e As EventArgs) Handles NumericUpDownInterval.ValueChanged
+    '    ConfigurationManager.AppSettings.Set("Interval", NumericUpDownInterval.Value.ToString(Globalization.CultureInfo.InvariantCulture))
+
+    'End Sub
+
+    'Private Sub NumericUpDownTimeOut_ValueChanged(sender As Object, e As EventArgs) Handles NumericUpDownTimeOut.ValueChanged
+    '    ConfigurationManager.AppSettings.Set("TimeOut", NumericUpDownTimeOut.Value.ToString(Globalization.CultureInfo.InvariantCulture))
+
+    'End Sub
+
+    'Private Sub TextBoxHost_TextChanged(sender As Object, e As EventArgs) Handles TextBoxHost.TextChanged
+    '    ConfigurationManager.AppSettings.Set("Host", TextBoxHost.Text)
+
+    'End Sub
+
+
+    Private Sub FormMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+        Dim conf As Configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None)
+        Dim sett As KeyValueConfigurationCollection = conf.AppSettings.Settings
+
+        If sett("Interval") Is Nothing Then
+            sett.Add("Interval", NumericUpDownInterval.Value.ToString(Globalization.CultureInfo.InvariantCulture))
+        Else
+            sett("Interval").Value = NumericUpDownInterval.Value.ToString(Globalization.CultureInfo.InvariantCulture)
+        End If
+
+        If sett("TimeOut") Is Nothing Then
+            sett.Add("TimeOut", NumericUpDownTimeOut.Value.ToString(Globalization.CultureInfo.InvariantCulture))
+        Else
+            sett("TimeOut").Value = NumericUpDownTimeOut.Value.ToString(Globalization.CultureInfo.InvariantCulture)
+        End If
+
+        If sett("Host") Is Nothing Then
+            sett.Add("Host", TextBoxHost.Text)
+        Else
+            sett("Host").Value = TextBoxHost.Text
+        End If
+
+        conf.Save(ConfigurationSaveMode.Modified)
+        ConfigurationManager.RefreshSection(conf.AppSettings.SectionInformation.Name)
 
     End Sub
 

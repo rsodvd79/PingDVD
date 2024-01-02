@@ -34,17 +34,20 @@ Partial Class FormMain
         Me.Label1 = New System.Windows.Forms.Label()
         Me.TextBoxHost = New System.Windows.Forms.TextBox()
         Me.Label2 = New System.Windows.Forms.Label()
-        Me.TextBoxTimeout = New System.Windows.Forms.TextBox()
         Me.Label3 = New System.Windows.Forms.Label()
-        Me.TextBoxInterval = New System.Windows.Forms.TextBox()
         Me.ButtonStartStop = New System.Windows.Forms.Button()
+        Me.NumericUpDownTimeOut = New System.Windows.Forms.NumericUpDown()
+        Me.NumericUpDownInterval = New System.Windows.Forms.NumericUpDown()
         CType(Me.ChartMain, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.TableLayoutPanel1.SuspendLayout()
         Me.TableLayoutPanel2.SuspendLayout()
+        CType(Me.NumericUpDownTimeOut, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.NumericUpDownInterval, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'ChartMain
         '
+        Me.ChartMain.BackColor = System.Drawing.SystemColors.Control
         ChartArea1.AxisX.IntervalAutoMode = System.Windows.Forms.DataVisualization.Charting.IntervalAutoMode.VariableCount
         ChartArea1.AxisX.IsMarginVisible = False
         ChartArea1.AxisX.IsStartedFromZero = False
@@ -74,7 +77,7 @@ Partial Class FormMain
         Series2.Name = "SeriesCuSum"
         Me.ChartMain.Series.Add(Series1)
         Me.ChartMain.Series.Add(Series2)
-        Me.ChartMain.Size = New System.Drawing.Size(798, 418)
+        Me.ChartMain.Size = New System.Drawing.Size(794, 418)
         Me.ChartMain.TabIndex = 1
         Me.ChartMain.Text = "Chart1"
         '
@@ -111,17 +114,17 @@ Partial Class FormMain
         Me.TableLayoutPanel2.Controls.Add(Me.Label1, 0, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.TextBoxHost, 1, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.Label2, 2, 0)
-        Me.TableLayoutPanel2.Controls.Add(Me.TextBoxTimeout, 3, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.Label3, 4, 0)
-        Me.TableLayoutPanel2.Controls.Add(Me.TextBoxInterval, 5, 0)
         Me.TableLayoutPanel2.Controls.Add(Me.ButtonStartStop, 7, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.NumericUpDownTimeOut, 3, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.NumericUpDownInterval, 5, 0)
         Me.TableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Top
         Me.TableLayoutPanel2.Location = New System.Drawing.Point(0, 0)
         Me.TableLayoutPanel2.Margin = New System.Windows.Forms.Padding(0)
         Me.TableLayoutPanel2.Name = "TableLayoutPanel2"
         Me.TableLayoutPanel2.RowCount = 1
         Me.TableLayoutPanel2.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.TableLayoutPanel2.Size = New System.Drawing.Size(804, 26)
+        Me.TableLayoutPanel2.Size = New System.Drawing.Size(800, 26)
         Me.TableLayoutPanel2.TabIndex = 2
         '
         'Label1
@@ -137,10 +140,11 @@ Partial Class FormMain
         '
         'TextBoxHost
         '
+        Me.TextBoxHost.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
         Me.TextBoxHost.Dock = System.Windows.Forms.DockStyle.Top
         Me.TextBoxHost.Location = New System.Drawing.Point(38, 3)
         Me.TextBoxHost.Name = "TextBoxHost"
-        Me.TextBoxHost.Size = New System.Drawing.Size(161, 20)
+        Me.TextBoxHost.Size = New System.Drawing.Size(160, 20)
         Me.TextBoxHost.TabIndex = 1
         Me.TextBoxHost.Text = "www.google.it"
         '
@@ -148,59 +152,66 @@ Partial Class FormMain
         '
         Me.Label2.AutoSize = True
         Me.Label2.Dock = System.Windows.Forms.DockStyle.Right
-        Me.Label2.Location = New System.Drawing.Point(205, 0)
+        Me.Label2.Location = New System.Drawing.Point(204, 0)
         Me.Label2.Name = "Label2"
         Me.Label2.Size = New System.Drawing.Size(45, 26)
         Me.Label2.TabIndex = 2
         Me.Label2.Text = "Timeout"
         Me.Label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         '
-        'TextBoxTimeout
-        '
-        Me.TextBoxTimeout.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TextBoxTimeout.Location = New System.Drawing.Point(256, 3)
-        Me.TextBoxTimeout.Name = "TextBoxTimeout"
-        Me.TextBoxTimeout.Size = New System.Drawing.Size(161, 20)
-        Me.TextBoxTimeout.TabIndex = 3
-        Me.TextBoxTimeout.Text = "120"
-        '
         'Label3
         '
         Me.Label3.AutoSize = True
         Me.Label3.Dock = System.Windows.Forms.DockStyle.Right
-        Me.Label3.Location = New System.Drawing.Point(423, 0)
+        Me.Label3.Location = New System.Drawing.Point(421, 0)
         Me.Label3.Name = "Label3"
         Me.Label3.Size = New System.Drawing.Size(42, 26)
         Me.Label3.TabIndex = 4
         Me.Label3.Text = "Interval"
         Me.Label3.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         '
-        'TextBoxInterval
-        '
-        Me.TextBoxInterval.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TextBoxInterval.Location = New System.Drawing.Point(471, 3)
-        Me.TextBoxInterval.Name = "TextBoxInterval"
-        Me.TextBoxInterval.Size = New System.Drawing.Size(161, 20)
-        Me.TextBoxInterval.TabIndex = 5
-        Me.TextBoxInterval.Text = "200"
-        '
         'ButtonStartStop
         '
         Me.ButtonStartStop.Dock = System.Windows.Forms.DockStyle.Top
-        Me.ButtonStartStop.Location = New System.Drawing.Point(635, 0)
+        Me.ButtonStartStop.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.ButtonStartStop.Location = New System.Drawing.Point(632, 0)
         Me.ButtonStartStop.Margin = New System.Windows.Forms.Padding(0, 0, 3, 0)
         Me.ButtonStartStop.Name = "ButtonStartStop"
-        Me.ButtonStartStop.Size = New System.Drawing.Size(166, 23)
+        Me.ButtonStartStop.Size = New System.Drawing.Size(165, 23)
         Me.ButtonStartStop.TabIndex = 6
         Me.ButtonStartStop.Text = "Start\Stop"
         Me.ButtonStartStop.UseVisualStyleBackColor = True
+        '
+        'NumericUpDownTimeOut
+        '
+        Me.NumericUpDownTimeOut.Dock = System.Windows.Forms.DockStyle.Top
+        Me.NumericUpDownTimeOut.Location = New System.Drawing.Point(255, 3)
+        Me.NumericUpDownTimeOut.Maximum = New Decimal(New Integer() {100000, 0, 0, 0})
+        Me.NumericUpDownTimeOut.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.NumericUpDownTimeOut.Name = "NumericUpDownTimeOut"
+        Me.NumericUpDownTimeOut.Size = New System.Drawing.Size(160, 20)
+        Me.NumericUpDownTimeOut.TabIndex = 7
+        Me.NumericUpDownTimeOut.Value = New Decimal(New Integer() {500, 0, 0, 0})
+        '
+        'NumericUpDownInterval
+        '
+        Me.NumericUpDownInterval.Dock = System.Windows.Forms.DockStyle.Top
+        Me.NumericUpDownInterval.Location = New System.Drawing.Point(469, 3)
+        Me.NumericUpDownInterval.Maximum = New Decimal(New Integer() {100000, 0, 0, 0})
+        Me.NumericUpDownInterval.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.NumericUpDownInterval.Name = "NumericUpDownInterval"
+        Me.NumericUpDownInterval.Size = New System.Drawing.Size(160, 20)
+        Me.NumericUpDownInterval.TabIndex = 8
+        Me.NumericUpDownInterval.Value = New Decimal(New Integer() {500, 0, 0, 0})
         '
         'FormMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(800, 450)
         Me.Controls.Add(Me.TableLayoutPanel1)
+        Me.ForeColor = System.Drawing.SystemColors.ControlText
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "FormMain"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
@@ -209,6 +220,8 @@ Partial Class FormMain
         Me.TableLayoutPanel1.ResumeLayout(False)
         Me.TableLayoutPanel2.ResumeLayout(False)
         Me.TableLayoutPanel2.PerformLayout()
+        CType(Me.NumericUpDownTimeOut, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.NumericUpDownInterval, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
@@ -219,8 +232,8 @@ Partial Class FormMain
     Friend WithEvents Label1 As Label
     Friend WithEvents TextBoxHost As TextBox
     Friend WithEvents Label2 As Label
-    Friend WithEvents TextBoxTimeout As TextBox
     Friend WithEvents Label3 As Label
-    Friend WithEvents TextBoxInterval As TextBox
     Friend WithEvents ButtonStartStop As Button
+    Friend WithEvents NumericUpDownTimeOut As NumericUpDown
+    Friend WithEvents NumericUpDownInterval As NumericUpDown
 End Class
