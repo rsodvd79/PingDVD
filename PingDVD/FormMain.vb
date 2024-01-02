@@ -133,22 +133,6 @@ Public Class FormMain
 
     End Sub
 
-    'Private Sub NumericUpDownInterval_ValueChanged(sender As Object, e As EventArgs) Handles NumericUpDownInterval.ValueChanged
-    '    ConfigurationManager.AppSettings.Set("Interval", NumericUpDownInterval.Value.ToString(Globalization.CultureInfo.InvariantCulture))
-
-    'End Sub
-
-    'Private Sub NumericUpDownTimeOut_ValueChanged(sender As Object, e As EventArgs) Handles NumericUpDownTimeOut.ValueChanged
-    '    ConfigurationManager.AppSettings.Set("TimeOut", NumericUpDownTimeOut.Value.ToString(Globalization.CultureInfo.InvariantCulture))
-
-    'End Sub
-
-    'Private Sub TextBoxHost_TextChanged(sender As Object, e As EventArgs) Handles TextBoxHost.TextChanged
-    '    ConfigurationManager.AppSettings.Set("Host", TextBoxHost.Text)
-
-    'End Sub
-
-
     Private Sub FormMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
         Dim conf As Configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None)
         Dim sett As KeyValueConfigurationCollection = conf.AppSettings.Settings
