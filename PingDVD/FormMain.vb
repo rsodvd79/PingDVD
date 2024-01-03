@@ -13,8 +13,8 @@ Public Class FormMain
         InitializeComponent()
 
         ' Aggiungere le eventuali istruzioni di inizializzazione dopo la chiamata a InitializeComponent().
-        ForeColor = Color.FromArgb(245, 246, 250)
-        BackColor = Color.FromArgb(47, 54, 64)
+        ForeColor = Color.FromArgb(230, 230, 230)
+        BackColor = Color.FromArgb(30, 30, 30)
 
         TextBoxHost.ForeColor = ForeColor
         TextBoxHost.BackColor = BackColor
@@ -127,9 +127,9 @@ Public Class FormMain
             ChartMain.Series(1).Points.AddY(values.Average())
         Next
 
-        Me.Text = $"PingDVD - AVG : {Math.Round(values.Average(), 2)} - LAST : {values.Last} - MIN : {values.Min} - MAX : {values.Max} (msec)"
-
         ChartMain.ResumeLayout()
+
+        Me.Text = $"PingDVD - AVG : {Math.Round(values.Average(), 2)} msec - LAST : {values.Last} msec - MIN : {values.Min} msec - MAX : {values.Max} msec - {Date.MinValue.AddMilliseconds(NumericUpDownInterval.Value * values.Count):HH:mm:ss}"
 
     End Sub
 
