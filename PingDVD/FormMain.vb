@@ -7,6 +7,7 @@ Imports System.Text
 Public Class FormMain
 
     Dim values As New List(Of Long)
+    Dim StartStop As Boolean = False
 
     Public Sub New()
         ' La chiamata è richiesta dalla finestra di progettazione.
@@ -40,6 +41,19 @@ Public Class FormMain
         ChartMain.ChartAreas(0).AxisX.LineColor = ForeColor
         ChartMain.ChartAreas(0).AxisX.MajorTickMark.LineColor = ForeColor
 
+        ChartMain.Annotations.Clear()
+
+        ChartMain.Annotations.Add(New DataVisualization.Charting.HorizontalLineAnnotation With {
+            .AxisX = ChartMain.ChartAreas(0).AxisX,
+            .AxisY = ChartMain.ChartAreas(0).AxisY,
+            .ClipToChartArea = ChartMain.ChartAreas(0).Name,
+            .IsInfinitive = True,
+            .AnchorY = 0,
+            .LineWidth = 2,
+            .LineColor = Color.FromArgb(127, Color.Red),
+            .Visible = True
+        })
+
     End Sub
 
     Private Sub ButtonStartStop_Click(sender As Object, e As EventArgs) Handles ButtonStartStop.Click
@@ -48,38 +62,62 @@ Public Class FormMain
 
         ChartMain.ChartAreas(0).AxisY.Maximum = NumericUpDownTimeOut.Value
 
-        TimerMain.Enabled = Not TimerMain.Enabled
+        StartStop = Not StartStop
+
+        TimerMain.Enabled = StartStop
 
     End Sub
 
     Private Sub TimerMain_Tick(sender As Object, e As EventArgs) Handles TimerMain.Tick
-        Try
-            Dim options As New PingOptions With {.DontFragment = True}
 
-            Dim buffer As Byte() = Encoding.ASCII.GetBytes(StrDup(32, Chr(0)))
+        TimerMain.Stop()
 
-            Dim pingSender As Ping = New Ping()
+        Task.Factory.StartNew(
+                      Sub()
+                          Try
+                              Dim options As New PingOptions With {.DontFragment = True}
 
-            Dim timeout As Integer = CInt(NumericUpDownTimeOut.Value)
+                              Dim buffer As Byte() = Encoding.ASCII.GetBytes(StrDup(32, Chr(0)))
 
-            Dim reply As PingReply = pingSender.Send(TextBoxHost.Text, timeout, buffer, options)
+                              Dim pingSender As Ping = New Ping()
 
-            If reply.Status = IPStatus.Success Then
-                values.Add(reply.RoundtripTime)
-            Else
-                values.Add(timeout)
-            End If
+                              Dim timeout As Integer = CInt(NumericUpDownTimeOut.Value)
 
-        Catch ex As Exception
-            values.Add(-1)
+                              Dim reply As PingReply = pingSender.Send(TextBoxHost.Text, timeout, buffer, options)
 
-        End Try
+                              If reply.Status = IPStatus.Success Then
+                                  values.Add(reply.RoundtripTime)
+                              Else
+                                  values.Add(timeout)
+                              End If
 
-        If values.Count > 500 Then
-            values.RemoveAt(0)
+                          Catch ex As Exception
+                              values.Add(-1)
+
+                          End Try
+
+                          If values.Count > 500 Then
+                              values.RemoveAt(0)
+                          End If
+
+                          LoadPoint()
+
+                          TimerMain_Start()
+
+                      End Sub
+                    )
+
+    End Sub
+
+    Private Sub TimerMain_Start()
+        If InvokeRequired Then
+            BeginInvoke(New Action(AddressOf TimerMain_Start))
+            Exit Sub
         End If
 
-        LoadPoint()
+        If StartStop Then
+            TimerMain.Start()
+        End If
 
     End Sub
 
@@ -117,15 +155,20 @@ Public Class FormMain
     End Sub
 
     Private Sub LoadPoint()
+        If InvokeRequired Then
+            Invoke(New Action(AddressOf LoadPoint))
+            Exit Sub
+        End If
+
         ChartMain.SuspendLayout()
 
         ChartMain.Series(0).Points.Clear()
-        ChartMain.Series(1).Points.Clear()
 
         For Each vl As Long In values
             ChartMain.Series(0).Points.AddY(vl)
-            ChartMain.Series(1).Points.AddY(values.Average())
         Next
+
+        ChartMain.Annotations(0).AnchorY = values.Average()
 
         ChartMain.ResumeLayout()
 

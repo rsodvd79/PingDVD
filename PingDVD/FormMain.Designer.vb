@@ -25,7 +25,6 @@ Partial Class FormMain
         Me.components = New System.ComponentModel.Container()
         Dim ChartArea1 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
         Dim Series1 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
-        Dim Series2 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormMain))
         Me.ChartMain = New System.Windows.Forms.DataVisualization.Charting.Chart()
         Me.TimerMain = New System.Windows.Forms.Timer(Me.components)
@@ -71,12 +70,7 @@ Partial Class FormMain
         Series1.ChartArea = "ChartArea1"
         Series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
         Series1.Name = "SeriesPing"
-        Series2.ChartArea = "ChartArea1"
-        Series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
-        Series2.Color = System.Drawing.Color.Red
-        Series2.Name = "SeriesCuSum"
         Me.ChartMain.Series.Add(Series1)
-        Me.ChartMain.Series.Add(Series2)
         Me.ChartMain.Size = New System.Drawing.Size(794, 418)
         Me.ChartMain.TabIndex = 1
         Me.ChartMain.Text = "Chart1"
