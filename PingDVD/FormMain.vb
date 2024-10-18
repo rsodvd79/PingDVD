@@ -50,9 +50,11 @@ Public Class FormMain
             .IsInfinitive = True,
             .AnchorY = 0,
             .LineWidth = 2,
-            .LineColor = Color.FromArgb(127, Color.Red),
+            .LineColor = Color.FromArgb(200, 252, 62, 54),
             .Visible = True
         })
+
+        ChartMain.Series(0).Color = Color.FromArgb(255, 36, 92, 179)
 
     End Sub
 
