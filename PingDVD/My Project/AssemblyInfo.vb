@@ -10,10 +10,10 @@ Imports System.Runtime.InteropServices
 
 <Assembly: AssemblyTitle("PingDVD")>
 <Assembly: AssemblyDescription("PingDVD")>
-<Assembly: AssemblyCompany("rsodvd79")>
+<Assembly: AssemblyCompany("www.drhack.it")>
 <Assembly: AssemblyProduct("PingDVD")>
 <Assembly: AssemblyCopyright("Copyright ©  2022")>
-<Assembly: AssemblyTrademark("rsodvd79")>
+<Assembly: AssemblyTrademark("www.drhack.it")>
 
 <Assembly: ComVisible(False)>
 
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' usando l'asterisco '*' come illustrato di seguito:
 ' <Assembly: AssemblyVersion("1.0.*")>
 
-<Assembly: AssemblyVersion("2022.11.30.0")>
-<Assembly: AssemblyFileVersion("2022.11.30.0")>
+<Assembly: AssemblyVersion("2024.01.04.0")>
+<Assembly: AssemblyFileVersion("2024.01.04.0")>
