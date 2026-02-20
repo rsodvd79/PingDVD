@@ -27,6 +27,11 @@
                     Content="Start / Stop" Margin="2" Padding="8,0"
                     Click="ButtonStartStop_Click" />
         </Grid>
-        <oxy:PlotView x:Name="PlotMain" />
+        <Border Margin="6" BorderBrush="#555" BorderThickness="1">
+            <Canvas x:Name="PlotCanvas"
+                    Background="#111"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch" />
+        </Border>
     </DockPanel>
 </Window>

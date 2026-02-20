@@ -6,13 +6,13 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
-using OxyPlot;
-using OxyPlot.Annotations;
-using OxyPlot.Axes;
-using OxyPlot.Series;
 
 namespace PingDVD;
 
@@ -20,89 +20,49 @@ public partial class MainWindow : Window
 {
     private readonly List<long> _values = new();
     private bool _running;
-    private readonly PlotModel _plotModel;
-    private readonly LineSeries _series;
-    private readonly LineAnnotation _avgLine;
+    private readonly Polyline _polyline;
+    private readonly Line _avgLine;
     private readonly string _settingsPath;
-
-    private const long PingFailureValue = -1;
 
     public MainWindow()
     {
         InitializeComponent();
 
-        _settingsPath = Path.Combine(AppContext.BaseDirectory, "pingdvd.settings.json");
+        _settingsPath = System.IO.Path.Combine(AppContext.BaseDirectory, "pingdvd.settings.json");
 
-        _plotModel = BuildPlotModel(out _series, out _avgLine);
-        PlotMain.Model = _plotModel;
+        _polyline = new Polyline
+        {
+            Stroke = Brushes.DeepSkyBlue,
+            StrokeThickness = 2,
+            Points = new AvaloniaList<Point>(),
+        };
+
+        _avgLine = new Line
+        {
+            Stroke = Brushes.OrangeRed,
+            StrokeThickness = 1,
+            StrokeDashArray = new AvaloniaList<double> { 4, 4 },
+        };
+
+        PlotCanvas.Children.Add(_avgLine);
+        PlotCanvas.Children.Add(_polyline);
+        PlotCanvas.AttachedToVisualTree += (_, _) => UpdatePlot();
 
         LoadSettings();
         InitializeValues();
         UpdatePlot();
     }
 
-    private static PlotModel BuildPlotModel(out LineSeries series, out LineAnnotation avgLine)
-    {
-        var model = new PlotModel
-        {
-            Background = OxyColor.FromRgb(30, 30, 30),
-            PlotAreaBackground = OxyColor.FromRgb(30, 30, 30),
-            TextColor = OxyColor.FromRgb(230, 230, 230),
-            PlotAreaBorderColor = OxyColor.FromRgb(100, 100, 100),
-        };
-
-        model.Axes.Add(new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            Minimum = 0,
-            Maximum = AppSettings.DefaultTimeOut,
-            AxislineColor = OxyColor.FromRgb(230, 230, 230),
-            TicklineColor = OxyColor.FromRgb(230, 230, 230),
-            TextColor = OxyColor.FromRgb(230, 230, 230),
-            MajorGridlineStyle = LineStyle.Solid,
-            MajorGridlineColor = OxyColor.FromArgb(50, 230, 230, 230),
-            IsZoomEnabled = false,
-            IsPanEnabled = false,
-        });
-
-        model.Axes.Add(new LinearAxis
-        {
-            Position = AxisPosition.Bottom,
-            IsAxisVisible = false,
-            IsZoomEnabled = false,
-            IsPanEnabled = false,
-        });
-
-        series = new LineSeries
-        {
-            Color = OxyColor.FromRgb(36, 92, 179),
-            StrokeThickness = 3,
-            MarkerType = MarkerType.None,
-        };
-        model.Series.Add(series);
-
-        avgLine = new LineAnnotation
-        {
-            Type = LineAnnotationType.Horizontal,
-            Y = 0,
-            Color = OxyColor.FromArgb(200, 252, 62, 54),
-            StrokeThickness = 2,
-            LineStyle = LineStyle.Solid,
-        };
-        model.Annotations.Add(avgLine);
-
-        return model;
-    }
-
     private void InitializeValues()
     {
         // Pre-populate chart with a descending "idle" baseline clamped at 9 ms,
         // so the chart looks non-empty before the first real ping run.
-        long lv = 11;
-        for (int i = 0; i < 500; i++)
+        var rand = new Random();
+        for (int i = 0; i < 200; i++)
         {
-            _values.Add(Math.Max(lv, 9));
-            lv--;
+            var baseValue = 12 + 3 * Math.Sin(i / 8.0);
+            var noisy = baseValue + rand.NextDouble() * 2 - 1;
+            _values.Add(Math.Max(0, (long)Math.Round(noisy)));
         }
     }
 
@@ -111,14 +71,7 @@ public partial class MainWindow : Window
         _running = !_running;
 
         if (_running)
-        {
-            var timeout = (double)(NumericTimeOut.Value ?? (decimal)AppSettings.DefaultTimeOut);
-            var yAxis = _plotModel.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
-            if (yAxis != null)
-                yAxis.Maximum = timeout;
-
             _ = RunPingLoopAsync();
-        }
     }
 
     private async Task RunPingLoopAsync()
@@ -163,26 +116,43 @@ public partial class MainWindow : Window
         }
         catch
         {
-            return PingFailureValue;
+            // When ping is not permitted or host is invalid, show a timeout bar instead of disappearing data.
+            return timeout;
         }
     }
 
     private void UpdatePlot()
     {
-        _series.Points.Clear();
-        for (int i = 0; i < _values.Count; i++)
-            _series.Points.Add(new DataPoint(i, _values[i]));
-
         double avg = _values.Average();
-        _avgLine.Y = avg;
+        var minVal = _values.Min();
+        var maxVal = _values.Max();
 
         double interval = (double)(NumericInterval.Value ?? (decimal)AppSettings.DefaultInterval);
         var elapsed = TimeSpan.FromMilliseconds(interval * _values.Count);
         Title = $"PingDVD - AVG: {Math.Round(avg, 2)} msec - LAST: {_values.Last()} msec - " +
-                $"MIN: {_values.Min()} msec - MAX: {_values.Max()} msec - " +
+                $"MIN: {minVal} msec - MAX: {maxVal} msec - " +
                 $"{elapsed:hh\\:mm\\:ss}";
 
-        _plotModel.InvalidatePlot(true);
+        var bounds = PlotCanvas.Bounds;
+        if (bounds.Width <= 1 || bounds.Height <= 1)
+            return;
+
+        var xScale = bounds.Width / Math.Max(1, _values.Count - 1);
+        var yScale = bounds.Height / Math.Max(1, (maxVal - minVal == 0 ? 1 : maxVal - minVal));
+
+        var points = new AvaloniaList<Point>();
+        for (int i = 0; i < _values.Count; i++)
+        {
+            var x = i * xScale;
+            var y = bounds.Height - ((_values[i] - minVal) * yScale);
+            points.Add(new Point(x, y));
+        }
+        _polyline.Points = points;
+
+        var avgY = bounds.Height - ((avg - minVal) * yScale);
+        _avgLine.StartPoint = new Point(0, avgY);
+        _avgLine.EndPoint = new Point(bounds.Width, avgY);
+
     }
 
     private void LoadSettings()
