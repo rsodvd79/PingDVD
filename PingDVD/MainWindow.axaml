@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="clr-namespace:OxyPlot.Avalonia;assembly=OxyPlot.Avalonia"
+        x:Class="PingDVD.MainWindow"
+        Title="PingDVD"
+        Width="800" Height="450"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/cookie.ico">
+    <DockPanel>
+        <Grid DockPanel.Dock="Top" Margin="4,2"
+              ColumnDefinitions="Auto,*,Auto,*,Auto,*,*,Auto">
+            <TextBlock Grid.Column="0" Text="Host"
+                       VerticalAlignment="Center" Margin="2,0,6,0" />
+            <TextBox Grid.Column="1" x:Name="TextBoxHost"
+                     Text="www.google.it" Margin="2" />
+            <TextBlock Grid.Column="2" Text="Timeout"
+                       VerticalAlignment="Center" Margin="6,0,6,0" />
+            <NumericUpDown Grid.Column="3" x:Name="NumericTimeOut"
+                           Value="500" Minimum="1" Maximum="100000"
+                           FormatString="0" Margin="2" />
+            <TextBlock Grid.Column="4" Text="Interval"
+                       VerticalAlignment="Center" Margin="6,0,6,0" />
+            <NumericUpDown Grid.Column="5" x:Name="NumericInterval"
+                           Value="500" Minimum="1" Maximum="100000"
+                           FormatString="0" Margin="2" />
+            <Button Grid.Column="7" x:Name="ButtonStartStop"
+                    Content="Start / Stop" Margin="2" Padding="8,0"
+                    Click="ButtonStartStop_Click" />
+        </Grid>
+        <oxy:PlotView x:Name="PlotMain" />
+    </DockPanel>
+</Window>
