@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <RootNamespace>PingDVD</RootNamespace>
     <AssemblyName>PingDVD</AssemblyName>
+    <ApplicationIcon>Assets/pingdvd.ico</ApplicationIcon>
+    <RuntimeIdentifiers>osx-arm64;osx-x64</RuntimeIdentifiers>
+    <UseAppHost>true</UseAppHost>
+    <MacOSBundleInfoPlist>Info.plist</MacOSBundleInfoPlist>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,11 +17,16 @@
     <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.3" />
-    <PackageReference Include="OxyPlot.Avalonia" Version="2.1.0-avalonia11" />
   </ItemGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
+    <Content Include="Assets/pingdvd.icns">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="Info.plist">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
