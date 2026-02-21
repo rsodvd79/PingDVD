@@ -12,6 +12,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Threading;
 
 namespace PingDVD;
@@ -27,6 +28,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://PingDVD/Assets/pingdvd.png")));
 
         _settingsPath = System.IO.Path.Combine(AppContext.BaseDirectory, "pingdvd.settings.json");
 

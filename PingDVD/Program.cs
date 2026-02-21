@@ -14,6 +14,7 @@ class Program
             .UsePlatformDetect()
             .With(new MacOSPlatformOptions
             {
+                ShowInDock = true,
                 DisableDefaultApplicationMenuItems = true,
                 DisableNativeMenus = true,
             })

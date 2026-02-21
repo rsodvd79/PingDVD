@@ -29,4 +29,23 @@
     </None>
   </ItemGroup>
 
+  <Target Name="StampMacExecutableIcon"
+          AfterTargets="CopyFilesToOutputDirectory"
+          Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <PropertyGroup>
+      <_MacIconSource>$(MSBuildProjectDirectory)/Assets/pingdvd.png</_MacIconSource>
+      <_MacIconResource>$(IntermediateOutputPath)pingdvd-icon.rsrc</_MacIconResource>
+      <_MacExecutablePath>$(TargetDir)$(AssemblyName)$(_NativeExecutableExtension)</_MacExecutablePath>
+    </PropertyGroup>
+
+    <Exec Condition="Exists('$(_MacIconSource)')"
+          Command="/usr/bin/sips -i &quot;$(_MacIconSource)&quot;" />
+    <Exec Condition="Exists('$(_MacIconSource)')"
+          Command="/usr/bin/DeRez -only icns &quot;$(_MacIconSource)&quot; &gt; &quot;$(_MacIconResource)&quot;" />
+    <Exec Condition="Exists('$(_MacIconResource)') and Exists('$(_MacExecutablePath)')"
+          Command="/usr/bin/Rez -append &quot;$(_MacIconResource)&quot; -o &quot;$(_MacExecutablePath)&quot;" />
+    <Exec Condition="Exists('$(_MacIconResource)') and Exists('$(_MacExecutablePath)')"
+          Command="/usr/bin/SetFile -a C &quot;$(_MacExecutablePath)&quot;" />
+  </Target>
+
 </Project>
