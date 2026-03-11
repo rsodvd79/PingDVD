@@ -21,6 +21,7 @@ public partial class MainWindow : Window
 {
     private readonly List<long> _values = new();
     private bool _running;
+    private int _realPingCount;
     private readonly Polyline _polyline;
     private readonly Line _avgLine;
     private readonly string _settingsPath;
@@ -71,9 +72,13 @@ public partial class MainWindow : Window
     private void ButtonStartStop_Click(object? sender, RoutedEventArgs e)
     {
         _running = !_running;
+        ButtonStartStop.Content = _running ? "■ Stop" : "▶ Start";
 
         if (_running)
+        {
+            _realPingCount = 0;
             _ = RunPingLoopAsync();
+        }
     }
 
     private async Task RunPingLoopAsync()
@@ -96,6 +101,7 @@ public partial class MainWindow : Window
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 _values.Add(roundtrip);
+                _realPingCount++;
                 if (_values.Count > 500)
                     _values.RemoveAt(0);
                 UpdatePlot();
@@ -125,12 +131,15 @@ public partial class MainWindow : Window
 
     private void UpdatePlot()
     {
+        if (_values.Count == 0)
+            return;
+
         double avg = _values.Average();
         var minVal = _values.Min();
         var maxVal = _values.Max();
 
         double interval = (double)(NumericInterval.Value ?? (decimal)AppSettings.DefaultInterval);
-        var elapsed = TimeSpan.FromMilliseconds(interval * _values.Count);
+        var elapsed = TimeSpan.FromMilliseconds(interval * _realPingCount);
         Title = $"PingDVD - AVG: {Math.Round(avg, 2)} msec - LAST: {_values.Last()} msec - " +
                 $"MIN: {minVal} msec - MAX: {maxVal} msec - " +
                 $"{elapsed:hh\\:mm\\:ss}";
