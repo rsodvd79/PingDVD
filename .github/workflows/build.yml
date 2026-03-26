@@ -33,14 +33,19 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Publish
-      run: dotnet publish PingDVD/PingDVD.csproj -c Release -r ${{ matrix.os }} --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/${{ matrix.os }}
+      run: |
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          dotnet publish PingDVD/PingDVD.csproj -c Release -r win-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/windows
+        else
+          dotnet publish PingDVD/PingDVD.csproj -c Release -r osx-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/macos
+        fi
 
     - name: Create ZIP archive
       run: |
         if [[ "${{ runner.os }}" == "Windows" ]]; then
-          cd publish/windows-latest && Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
+          cd publish/windows && Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
         else
-          cd publish/macos-latest && zip -r ../../PingDVD-macOS.zip .
+          cd publish/macos && zip -r ../../PingDVD-macOS.zip .
         fi
 
     - name: Upload ZIP artifact
