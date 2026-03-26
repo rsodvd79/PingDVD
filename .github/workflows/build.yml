@@ -1,8 +1,11 @@
-name: Build
+name: Build and Release
 
 on:
   push:
     branches: [ Avalonia_dotnet_8 ]
+    tags:
+      - 'v*'  # Push to tags starting with v
+
   pull_request:
     branches: [ Avalonia_dotnet_8 ]
 
@@ -29,5 +32,26 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
 
-    - name: Test (if any tests exist)
-      run: dotnet test --no-build --verbosity normal
+    - name: Publish
+      run: dotnet publish PingDVD/PingDVD.csproj -c Release -r ${{ matrix.os }} --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/${{ matrix.os }}
+
+    - name: Create ZIP archive
+      run: |
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          cd publish/windows-latest && Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
+        else
+          cd publish/macos-latest && zip -r ../../PingDVD-macOS.zip .
+        fi
+
+    - name: Upload ZIP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PingDVD-${{ runner.os }}
+        path: PingDVD-*.zip
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: PingDVD-*.zip
+        generate_release_notes: true

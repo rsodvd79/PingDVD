@@ -7,7 +7,7 @@
     <RootNamespace>PingDVD</RootNamespace>
     <AssemblyName>PingDVD</AssemblyName>
     <ApplicationIcon>Assets/pingdvd.ico</ApplicationIcon>
-    <RuntimeIdentifiers>osx-arm64;osx-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;osx-arm64;osx-x64</RuntimeIdentifiers>
     <UseAppHost>true</UseAppHost>
     <MacOSBundleInfoPlist>Info.plist</MacOSBundleInfoPlist>
   </PropertyGroup>
