@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [ Avalonia_dotnet_8 ]
+  pull_request:
+    branches: [ Avalonia_dotnet_8 ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Test (if any tests exist)
+      run: dotnet test --no-build --verbosity normal
