@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -19,6 +21,17 @@ namespace PingDVD;
 
 public partial class MainWindow : Window
 {
+    // Constants for chart initialization
+    private const int InitialSampleCount = 200;
+    private const double BaseValueOffset = 12.0;
+    private const double SinusoidalAmplitude = 3.0;
+    private const double SinusoidalFrequency = 8.0;
+    private const double NoiseRange = 2.0;
+    
+    // Constants for chart display
+    private const int MaxHistorySize = 500;
+    private const double MinYRange = 10.0; // Minimum range for Y axis in milliseconds
+    
     private readonly List<long> _values = new();
     private bool _running;
     private int _realPingCount;
@@ -61,24 +74,123 @@ public partial class MainWindow : Window
         // Pre-populate chart with a descending "idle" baseline clamped at 9 ms,
         // so the chart looks non-empty before the first real ping run.
         var rand = new Random();
-        for (int i = 0; i < 200; i++)
+        for (int i = 0; i < InitialSampleCount; i++)
         {
-            var baseValue = 12 + 3 * Math.Sin(i / 8.0);
-            var noisy = baseValue + rand.NextDouble() * 2 - 1;
+            var baseValue = BaseValueOffset + SinusoidalAmplitude * Math.Sin(i / SinusoidalFrequency);
+            var noisy = baseValue + rand.NextDouble() * NoiseRange - 1;
             _values.Add(Math.Max(0, (long)Math.Round(noisy)));
         }
     }
 
     private void ButtonStartStop_Click(object? sender, RoutedEventArgs e)
     {
+        // Validate host before starting
+        string host = TextBoxHost.Text?.Trim() ?? AppSettings.DefaultHost;
+        if (!IsValidHost(host))
+        {
+            // Show error - for now just use default and continue
+            host = AppSettings.DefaultHost;
+            TextBoxHost.Text = host;
+        }
+
         _running = !_running;
         ButtonStartStop.Content = _running ? "■ Stop" : "▶ Start";
+        UpdateStatusIndicator(_running);
 
         if (_running)
         {
             _realPingCount = 0;
             _ = RunPingLoopAsync();
         }
+    }
+
+    private void ButtonApply_Click(object? sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+    }
+
+    private void ButtonReset_Click(object? sender, RoutedEventArgs e)
+    {
+        TextBoxHost.Text = AppSettings.DefaultHost;
+        NumericInterval.Value = (decimal)AppSettings.DefaultInterval;
+        NumericTimeOut.Value = (decimal)AppSettings.DefaultTimeOut;
+        SaveSettings();
+    }
+
+    private void UpdateStatusIndicator(bool running, long pingResult = 0)
+    {
+        if (!running)
+        {
+            StatusLED.Fill = Brushes.Red;
+            StatusText.Text = "Stopped";
+            return;
+        }
+
+        // Running state
+        if (pingResult >= 0)
+        {
+            // Success or timeout (timeout treated as normal high value)
+            StatusLED.Fill = Brushes.Green;
+            StatusText.Text = $"Running - Last: {pingResult} ms";
+        }
+        else
+        {
+            // Error conditions based on IPStatus mapping
+            switch (pingResult)
+            {
+                case -1:
+                    StatusLED.Fill = Brushes.Orange;
+                    StatusText.Text = "Error: Host unreachable";
+                    break;
+                case -2:
+                    StatusLED.Fill = Brushes.Orange;
+                    StatusText.Text = "Error: Access denied";
+                    break;
+                default:
+                    // Should not happen with current implementation, but handle just in case
+                    StatusLED.Fill = Brushes.Orange;
+                    StatusText.Text = "Error: Unknown";
+                    break;
+            }
+        }
+    }
+
+    private bool IsValidHost(string host)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+            return false;
+
+        // Basic validation for hostname or IP address
+        // This is a simple check - in production you might want to use Uri.CheckHostName or similar
+        if (host.Length > 255)
+            return false;
+
+        // Check if it's an IP address
+        if (System.Net.IPAddress.TryParse(host, out _))
+            return true;
+
+        // Basic hostname validation (letters, digits, hyphens, dots)
+        // Each label between dots should be 1-63 chars, start/end with alphanumeric
+        var labels = host.Split('.');
+        if (labels.Length < 1)
+            return false;
+
+        foreach (var label in labels)
+        {
+            if (string.IsNullOrEmpty(label) || label.Length > 63)
+                return false;
+
+            if (!char.IsLetterOrDigit(label[0]) || !char.IsLetterOrDigit(label[label.Length - 1]))
+                return false;
+
+            foreach (char c in label)
+            {
+                if (!char.IsLetterOrDigit(c) && c != '-')
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private async Task RunPingLoopAsync()
@@ -102,9 +214,10 @@ public partial class MainWindow : Window
             {
                 _values.Add(roundtrip);
                 _realPingCount++;
-                if (_values.Count > 500)
+                if (_values.Count > MaxHistorySize)
                     _values.RemoveAt(0);
                 UpdatePlot();
+                UpdateStatusIndicator(_running, roundtrip);
             });
 
             if (_running)
@@ -120,7 +233,17 @@ public partial class MainWindow : Window
             var options = new PingOptions { DontFragment = true };
             var buffer = Encoding.ASCII.GetBytes(new string('\0', 32));
             var reply = await pingSender.SendPingAsync(host, timeout, buffer, options);
-            return reply.Status == IPStatus.Success ? reply.RoundtripTime : timeout;
+            
+            // Map IPStatus to our return values for better error handling
+            return reply.Status switch
+            {
+                IPStatus.Success => reply.RoundtripTime,
+                IPStatus.TimedOut => timeout,
+                IPStatus.DestinationHostUnreachable => -1,  // Host not found/unreachable
+                IPStatus.DestinationNetworkUnreachable => -1, // Network unreachable
+                IPStatus.DestinationProhibited => -2,       // Access denied/prohibited
+                _ => timeout // For other errors, return timeout (treat as high latency)
+            };
         }
         catch
         {
@@ -148,22 +271,28 @@ public partial class MainWindow : Window
         if (bounds.Width <= 1 || bounds.Height <= 1)
             return;
 
+        // Ensure a minimum Y range to prevent division by zero and to keep chart readable when values are similar
+        const double minRange = 10.0; // milliseconds
+        double actualRange = maxVal - minVal;
+        double range = Math.Max(actualRange, minRange);
+        // If actualRange is zero, we still want to center around the value
+        double rangeMin = actualRange < minRange ? (minVal + maxVal) / 2 - minRange / 2 : minVal;
+
         var xScale = bounds.Width / Math.Max(1, _values.Count - 1);
-        var yScale = bounds.Height / Math.Max(1, (maxVal - minVal == 0 ? 1 : maxVal - minVal));
+        var yScale = bounds.Height / range;
 
         var points = new AvaloniaList<Point>();
         for (int i = 0; i < _values.Count; i++)
         {
             var x = i * xScale;
-            var y = bounds.Height - ((_values[i] - minVal) * yScale);
+            var y = bounds.Height - ((_values[i] - rangeMin) * yScale);
             points.Add(new Point(x, y));
         }
         _polyline.Points = points;
 
-        var avgY = bounds.Height - ((avg - minVal) * yScale);
+        var avgY = bounds.Height - ((avg - rangeMin) * yScale);
         _avgLine.StartPoint = new Point(0, avgY);
         _avgLine.EndPoint = new Point(bounds.Width, avgY);
-
     }
 
     private void LoadSettings()
