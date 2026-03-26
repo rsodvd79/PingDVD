@@ -1,79 +1,79 @@
 # PingDVD
-Ping GUI with chart
+GUI per il ping con grafico in tempo reale
 
-A real-time network latency monitoring application built with Avalonia .NET that pings a specified host and displays response times in an interactive chart.
+Applicazione per il monitoraggio della latenza di rete costruita con Avalonia .NET che esegue il ping di un host specificato e visualizza i tempi di risposta in un grafico interattivo.
 
-## Features
+## Funzionalità
 
-- **Real-time Ping Monitoring**: Continuously ping a host and visualize latency over time
-- **Interactive Chart**: DeepSkyBlue polyline showing ping times with OrangeRed average line
-- **Status Indicators**: 
-  - LED indicator (Red/Green/Orange) showing current state
-  - Status text displaying "Stopped", "Running", or error messages
-  - Positioned conveniently below the chart
-- **Enhanced Error Handling**: 
-  - Distinguishes between host unreachable, access denied, and other ping errors
-  - Graceful fallback to timeout values for continued visualization
-- **User Controls**:
-  - Host input (hostname or IP address)
-  - Configurable timeout (1-100000 ms)
-  - Configurable interval (1-100000 ms)
-  - Start/Stop button to control ping operations
-  - Apply button to save settings immediately
-  - Reset button to restore default values
-- **Settings Persistence**: 
-  - Automatic saving of settings on application exit
-  - Manual saving via Apply button
-  - Loading of saved settings on startup
-- **Chart Improvements**:
-  - Auto-scaling with minimum Y-range (10ms) for readability when values are similar
-  - Configurable history size (default 500 samples)
-  - Smooth animation and updating
+- **Monitoraggio Ping in Tempo Reale**: Esegue continuamente il ping di un host e visualizza la latenza nel tempo
+- **Grafico Interattivo**: Polilinea DeepSkyBlue che mostra i tempi di ping con linea media OrangeRed
+- **Indicatori di Stato**:
+  - Indicatore LED (Rosso/Verde/Arancione) che mostra lo stato corrente
+  - Testo di stato che visualizza "Fermato", "In Esecuzione" o messaggi di errore
+  - Posizionato comodamente sotto il grafico
+- **Gestione Migliorata degli Errori**:
+  - Distingue tra host non raggiungibile, accesso negato e altri errori di ping
+  - Fallback grazioso ai valori di timeout per continuare la visualizzazione
+- **Controlli Utente**:
+  - Campo per l'input dell'host (hostname o indirizzo IP)
+  - Timeout configurabile (1-100000 ms)
+  - Intervallo configurabile (1-100000 ms)
+  - Pulsante Start/Stop per controllare le operazioni di ping
+  - Pulsante Apply per salvare immediatamente le impostazioni
+  - Pulsante Reset per ripristinare i valori predefiniti
+- **Persistenza delle Impostazioni**:
+  - Salvataggio automatico delle impostazioni alla chiusura dell'applicazione
+  - Salvataggio manuale tramite pulsante Apply
+  - Caricamento delle impostazioni salvate all'avvio
+- **Miglioramenti al Grafico**:
+  - Auto-scaling con range Y minimo (10ms) per la leggibilità quando i valori sono simili
+  - Dimensione dello storico configurabile (predefinito 500 campioni)
+  - Animazione fluida e aggiornamento continuo
 
-## Technical Details
+## Dettagli Tecnici
 
-- **Framework**: .NET 8.0 with Avalonia UI
-- **Cross-platform**: Primarily tested on macOS, but designed for cross-platform use
-- **Networking**: Uses System.Net.NetworkInformation.Ping class
-- **UI**: MVVM-inspired pattern with code-behind for UI logic
-- **Persistence**: JSON-based settings storage
+- **Framework**: .NET 8.0 con Avalonia UI
+- **Multi-piattaforma**: Principalmente testato su macOS, ma progettato per l'uso multi-piattaforma
+- **Networking**: Utilizza la classe System.Net.NetworkInformation.Ping
+- **UI**: Pattern ispirato al MVVM con logica nel code-behind
+- **Persistenza**: Archiviazione delle impostazioni in formato JSON
 
-## Default Settings
+## Impostazioni Predefinite
 
 - **Host**: www.google.it
-- **Interval**: 500 ms
+- **Intervallo**: 500 ms
 - **Timeout**: 500 ms
-- **History Size**: 500 samples
-- **Initial Chart**: Pre-populated with 200 sample points for immediate visualization
+- **Dimensione Storico**: 500 campioni
+- **Grafico Iniziale**: Pre-popolato con 200 punti di campione per una visualizzazione immediata
 
-## Recent Improvements
+## Miglioramenti Recenti
 
-1. **Enhanced Error Handling**: Differentiates between various ping failure modes
-2. **Better UI Feedback**: LED status indicator with contextual messages
-3. **Immediate Settings Apply**: Apply button saves settings without restart
-4. **One-click Reset**: Restore defaults instantly
-5. **Input Validation**: Basic hostname/IP validation before ping attempts
-6. **Chart Readability**: Minimum Y-axis range prevents unreadable charts
-7. **Code Quality**: Magic numbers replaced with named constants, optimized calculations
+1. **Gestione Migliorata degli Errori**: Differenzia tra vari modi di guasto del ping
+2. **Migliorato Feedback UI**: Indicatore LED di stato con messaggi contestuali
+3. **Applicazione Immediata delle Impostazioni**: Pulsante Apply salva le impostazioni senza riavvio
+4. **Reset con un Clic**: Ripristina istantaneamente i valori predefiniti
+5. **Validazione dell'Input**: Validazione base hostname/IP prima dei tentativi di ping
+6. **Leggibilità del Grafico**: Range Y minimo previene grafici illeggibili
+7. **Qualità del Codice**: I magic numbers sostituiti con costanti denominate, calcoli ottimizzati
 
-## Usage
+## Istruzioni per l'Uso
 
-1. Launch the application
-2. Optionally modify Host, Timeout, and Interval values
-3. Click "Start" to begin pinging
-4. Observe real-time latency in the chart
-5. Use "Apply" to save current settings
-6. Use "Reset" to return to factory defaults
-7. Click "Stop" to halt pinging
-8. Settings are automatically saved on exit
+1. Avviare l'applicazione
+2. Opzionalmente modificare i valori di Host, Timeout e Intervallo
+3. Fare clic su "Start" per iniziare il ping
+4. Osservare la latenza in tempo reale nel grafico
+5. Utilizzare "Apply" per salvare le impostazioni correnti
+6. Utilizzare "Reset" per tornare alle impostazioni di fabbrica
+7. Fare clic su "Stop" per interrompere il pinging
+8. Le impostazioni vengono salvate automaticamente all'uscita
 
-## Building
+## Come Compilare
 
 ```bash
 dotnet build
 dotnet run
 ```
 
-## License
+## Licenza
 
-MIT License - see LICENSE file for details.
+Licenza MIT - vedere il file LICENSE per i dettagli.
