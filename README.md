@@ -77,3 +77,6 @@ dotnet run
 ## Licenza
 
 Licenza MIT - vedere il file LICENSE per i dettagli.
+# CI Status
+
+This project uses GitHub Actions to automatically build Release versions for Windows and macOS on every commit.
