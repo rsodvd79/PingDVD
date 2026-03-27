@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
@@ -32,21 +34,27 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
 
-    - name: Publish
-      run: |
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          dotnet publish PingDVD/PingDVD.csproj -c Release -r win-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/windows
-        else
-          dotnet publish PingDVD/PingDVD.csproj -c Release -r osx-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/macos
-        fi
+    - name: Publish for Windows
+      if: runner.os == 'Windows'
+      run: dotnet publish PingDVD/PingDVD.csproj -c Release -r win-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/windows
 
-    - name: Create ZIP archive
+    - name: Publish for macOS
+      if: runner.os == 'macOS'
+      run: dotnet publish PingDVD/PingDVD.csproj -c Release -r osx-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/macos
+
+    - name: Create ZIP archive for Windows
+      if: runner.os == 'Windows'
+      shell: powershell
       run: |
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          cd publish/windows && Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
-        else
-          cd publish/macos && zip -r ../../PingDVD-macOS.zip .
-        fi
+        cd publish/windows
+        Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
+
+    - name: Create ZIP archive for macOS
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        cd publish/macos
+        zip -r ../../PingDVD-macOS.zip .
 
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4
