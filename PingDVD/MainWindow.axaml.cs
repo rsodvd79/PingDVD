@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -30,10 +29,9 @@ public partial class MainWindow : Window
     
     // Constants for chart display
     private const int MaxHistorySize = 500;
-    private const double MinYRange = 10.0; // Minimum range for Y axis in milliseconds
     
     private readonly List<long> _values = new();
-    private bool _running;
+    private volatile bool _running;
     private int _realPingCount;
     private readonly Polyline _polyline;
     private readonly Line _avgLine;
@@ -71,8 +69,7 @@ public partial class MainWindow : Window
 
     private void InitializeValues()
     {
-        // Pre-populate chart with a descending "idle" baseline clamped at 9 ms,
-        // so the chart looks non-empty before the first real ping run.
+        // Pre-populate chart with synthetic samples so it looks non-empty before the first real ping run.
         var rand = new Random();
         for (int i = 0; i < InitialSampleCount; i++)
         {
@@ -93,15 +90,19 @@ public partial class MainWindow : Window
             TextBoxHost.Text = host;
         }
 
-        _running = !_running;
-        ButtonStartStop.Content = _running ? "■ Stop" : "▶ Start";
-        UpdateStatusIndicator(_running);
-
         if (_running)
         {
-            _realPingCount = 0;
-            _ = RunPingLoopAsync();
+            _running = false;
+            ButtonStartStop.Content = "▶ Start";
+            UpdateStatusIndicator(false);
+            return;
         }
+
+        _running = true;
+        ButtonStartStop.Content = "■ Stop";
+        UpdateStatusIndicator(true);
+        _realPingCount = 0;
+        _ = RunPingLoopAsync();
     }
 
     private void ButtonApply_Click(object? sender, RoutedEventArgs e)
@@ -272,11 +273,11 @@ public partial class MainWindow : Window
             return;
 
         // Ensure a minimum Y range to prevent division by zero and to keep chart readable when values are similar
-        const double minRange = 10.0; // milliseconds
+        const double minYRange = 10.0; // milliseconds
         double actualRange = maxVal - minVal;
-        double range = Math.Max(actualRange, minRange);
+        double range = Math.Max(actualRange, minYRange);
         // If actualRange is zero, we still want to center around the value
-        double rangeMin = actualRange < minRange ? (minVal + maxVal) / 2 - minRange / 2 : minVal;
+        double rangeMin = actualRange < minYRange ? (minVal + maxVal) / 2 - minYRange / 2 : minVal;
 
         var xScale = bounds.Width / Math.Max(1, _values.Count - 1);
         var yScale = bounds.Height / range;

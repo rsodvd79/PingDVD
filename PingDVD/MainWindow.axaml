@@ -3,8 +3,7 @@
         x:Class="PingDVD.MainWindow"
         Title="PingDVD"
         Width="800" Height="450"
-        WindowStartupLocation="CenterScreen"
-        Icon="avares://PingDVD/Assets/pingdvd.png">
+        WindowStartupLocation="CenterScreen">
     <DockPanel>
         <Grid DockPanel.Dock="Top" Margin="4,2"
               ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,Auto,Auto">
