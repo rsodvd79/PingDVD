@@ -51,12 +51,22 @@ jobs:
         cd publish/windows
         Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
 
+    - name: Create .app bundle for macOS
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        APP=PingDVD.app
+        mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+        cp -r publish/macos/ "$APP/Contents/MacOS/"
+        cp PingDVD/Info.plist "$APP/Contents/"
+        cp PingDVD/Assets/pingdvd.icns "$APP/Contents/Resources/"
+        chmod +x "$APP/Contents/MacOS/PingDVD"
+
     - name: Create ZIP archive for macOS
       if: runner.os == 'macOS'
       shell: bash
       run: |
-        cd publish/macos
-        zip -r ../../PingDVD-macOS.zip .
+        zip -r PingDVD-macOS.zip PingDVD.app
 
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4

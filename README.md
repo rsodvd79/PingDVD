@@ -3,16 +3,19 @@ GUI per il ping con grafico in tempo reale
 
 Applicazione per il monitoraggio della latenza di rete costruita con Avalonia .NET che esegue il ping di un host specificato e visualizza i tempi di risposta in un grafico interattivo.
 
+![Screenshot di PingDVD](screenshot.png)
+
 ## Funzionalità
 
 - **Monitoraggio Ping in Tempo Reale**: Esegue continuamente il ping di un host e visualizza la latenza nel tempo
 - **Grafico Interattivo**: Polilinea DeepSkyBlue che mostra i tempi di ping con linea media OrangeRed
 - **Indicatori di Stato**:
   - Indicatore LED (Rosso/Verde/Arancione) che mostra lo stato corrente
-  - Testo di stato che visualizza "Fermato", "In Esecuzione" o messaggi di errore
+  - Testo di stato che visualizza "Stopped", "Running" o messaggi di errore
   - Posizionato comodamente sotto il grafico
 - **Gestione Migliorata degli Errori**:
   - Distingue tra host non raggiungibile, accesso negato e altri errori di ping
+  - I codici di errore non entrano nel grafico né nelle statistiche (MIN/AVG/MAX)
   - Fallback grazioso ai valori di timeout per continuare la visualizzazione
 - **Controlli Utente**:
   - Campo per l'input dell'host (hostname o indirizzo IP)
@@ -25,6 +28,11 @@ Applicazione per il monitoraggio della latenza di rete costruita con Avalonia .N
   - Salvataggio automatico delle impostazioni alla chiusura dell'applicazione
   - Salvataggio manuale tramite pulsante Apply
   - Caricamento delle impostazioni salvate all'avvio
+  - File `pingdvd.settings.json` accanto all'eseguibile, con fallback automatico nella cartella utente (`ApplicationData`) se la directory di installazione è di sola lettura
+- **Statistiche Accurate**:
+  - All'avvio di una sessione i campioni sintetici di esempio vengono rimossi: AVG/MIN/MAX riflettono solo ping reali
+  - Tempo trascorso misurato con cronometro reale (non stimato dall'intervallo)
+  - Protezione da loop di ping duplicati in caso di Start/Stop ravvicinati
 - **Miglioramenti al Grafico**:
   - Auto-scaling con range Y minimo (10ms) per la leggibilità quando i valori sono simili
   - Dimensione dello storico configurabile (predefinito 500 campioni)
@@ -55,6 +63,9 @@ Applicazione per il monitoraggio della latenza di rete costruita con Avalonia .N
 5. **Validazione dell'Input**: Validazione base hostname/IP prima dei tentativi di ping
 6. **Leggibilità del Grafico**: Range Y minimo previene grafici illeggibili
 7. **Qualità del Codice**: I magic numbers sostituiti con costanti denominate, calcoli ottimizzati
+8. **Correzione Statistiche**: Codici di errore esclusi da grafico e medie, dati sintetici rimossi allo Start, tempo trascorso reale
+9. **Stabilità**: Nessun loop di ping duplicato su Start/Stop ravvicinati, nessun aggiornamento UI dopo la chiusura della finestra
+10. **Bundle macOS**: Release distribuita come `PingDVD.app` con icona nel Dock e nome "Ping DVD" nella barra menu
 
 ## Istruzioni per l'Uso
 
@@ -73,6 +84,18 @@ Applicazione per il monitoraggio della latenza di rete costruita con Avalonia .N
 dotnet build
 dotnet run
 ```
+
+### Pubblicazione
+
+```bash
+# Windows
+dotnet publish PingDVD/PingDVD.csproj -c Release -r win-x64 --self-contained false
+
+# macOS
+dotnet publish PingDVD/PingDVD.csproj -c Release -r osx-arm64 --self-contained false
+```
+
+Su macOS la release è distribuita come bundle `PingDVD.app` (con icona del Dock e nome "Ping DVD" nella barra menu, definiti in `Info.plist` e `App.axaml`).
 
 ## Licenza
 

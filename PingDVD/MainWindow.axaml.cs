@@ -32,7 +32,8 @@ public partial class MainWindow : Window
     
     private readonly List<long> _values = new();
     private volatile bool _running;
-    private int _realPingCount;
+    private int _runGeneration;
+    private readonly System.Diagnostics.Stopwatch _runStopwatch = new();
     private readonly Polyline _polyline;
     private readonly Line _avgLine;
     private readonly string _settingsPath;
@@ -81,7 +82,17 @@ public partial class MainWindow : Window
 
     private void ButtonStartStop_Click(object? sender, RoutedEventArgs e)
     {
-        // Validate host before starting
+        if (_running)
+        {
+            _running = false;
+            _runGeneration++;
+            _runStopwatch.Stop();
+            ButtonStartStop.Content = "▶ Start";
+            UpdateStatusIndicator(false);
+            return;
+        }
+
+        // Validate host only when starting
         string host = TextBoxHost.Text?.Trim() ?? AppSettings.DefaultHost;
         if (!IsValidHost(host))
         {
@@ -90,19 +101,15 @@ public partial class MainWindow : Window
             TextBoxHost.Text = host;
         }
 
-        if (_running)
-        {
-            _running = false;
-            ButtonStartStop.Content = "▶ Start";
-            UpdateStatusIndicator(false);
-            return;
-        }
-
         _running = true;
+        int generation = ++_runGeneration;
         ButtonStartStop.Content = "■ Stop";
         UpdateStatusIndicator(true);
-        _realPingCount = 0;
-        _ = RunPingLoopAsync();
+        // Drop synthetic pre-run samples so stats reflect only real pings
+        _values.Clear();
+        _polyline.Points = new AvaloniaList<Point>();
+        _runStopwatch.Restart();
+        _ = RunPingLoopAsync(generation);
     }
 
     private void ButtonApply_Click(object? sender, RoutedEventArgs e)
@@ -194,9 +201,9 @@ public partial class MainWindow : Window
         return true;
     }
 
-    private async Task RunPingLoopAsync()
+    private async Task RunPingLoopAsync(int generation)
     {
-        while (_running)
+        while (_running && generation == _runGeneration)
         {
             string host = AppSettings.DefaultHost;
             int timeout = (int)AppSettings.DefaultTimeOut;
@@ -213,15 +220,22 @@ public partial class MainWindow : Window
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                _values.Add(roundtrip);
-                _realPingCount++;
-                if (_values.Count > MaxHistorySize)
-                    _values.RemoveAt(0);
-                UpdatePlot();
+                // Stale loop from a previous run: discard without touching UI state
+                if (generation != _runGeneration)
+                    return;
+
+                // Negative values are error codes, not latencies: keep them out of chart/stats
+                if (roundtrip >= 0)
+                {
+                    _values.Add(roundtrip);
+                    if (_values.Count > MaxHistorySize)
+                        _values.RemoveAt(0);
+                    UpdatePlot();
+                }
                 UpdateStatusIndicator(_running, roundtrip);
             });
 
-            if (_running)
+            if (_running && generation == _runGeneration)
                 await Task.Delay(interval);
         }
     }
@@ -262,8 +276,7 @@ public partial class MainWindow : Window
         var minVal = _values.Min();
         var maxVal = _values.Max();
 
-        double interval = (double)(NumericInterval.Value ?? (decimal)AppSettings.DefaultInterval);
-        var elapsed = TimeSpan.FromMilliseconds(interval * _realPingCount);
+        var elapsed = _runStopwatch.Elapsed;
         Title = $"PingDVD - AVG: {Math.Round(avg, 2)} msec - LAST: {_values.Last()} msec - " +
                 $"MIN: {minVal} msec - MAX: {maxVal} msec - " +
                 $"{elapsed:hh\\:mm\\:ss}";
@@ -301,9 +314,10 @@ public partial class MainWindow : Window
         AppSettings settings = new();
         try
         {
-            if (File.Exists(_settingsPath))
+            var path = File.Exists(_settingsPath) ? _settingsPath : GetFallbackSettingsPath();
+            if (File.Exists(path))
             {
-                var json = File.ReadAllText(_settingsPath);
+                var json = File.ReadAllText(path);
                 settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             }
         }
@@ -325,14 +339,40 @@ public partial class MainWindow : Window
         try
         {
             var json = JsonSerializer.Serialize(settings);
-            File.WriteAllText(_settingsPath, json);
+            try
+            {
+                File.WriteAllText(_settingsPath, json);
+            }
+            catch
+            {
+                // BaseDirectory may be read-only (e.g. installed under Program Files): use per-user fallback
+                File.WriteAllText(GetFallbackSettingsPath(), json);
+            }
         }
         catch { }
+    }
+
+    private string GetFallbackSettingsPath()
+    {
+        try
+        {
+            var dir = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "PingDVD");
+            Directory.CreateDirectory(dir);
+            return System.IO.Path.Combine(dir, "pingdvd.settings.json");
+        }
+        catch
+        {
+            return _settingsPath;
+        }
     }
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         _running = false;
+        // Invalidate any in-flight ping loop so it won't touch the UI after close
+        _runGeneration++;
         SaveSettings();
         base.OnClosing(e);
     }
