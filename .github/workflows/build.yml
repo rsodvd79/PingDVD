@@ -18,38 +18,34 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
       with:
-        dotnet-version: 8.0.x
+        targets: ${{ matrix.target }}
 
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Check formatting
+      run: cargo fmt --all -- --check
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+    - name: Test
+      run: cargo test
 
-    - name: Publish for Windows
-      if: runner.os == 'Windows'
-      run: dotnet publish PingDVD/PingDVD.csproj -c Release -r win-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/windows
+    - name: Build release
+      run: cargo build --release --target ${{ matrix.target }}
 
-    - name: Publish for macOS
-      if: runner.os == 'macOS'
-      run: dotnet publish PingDVD/PingDVD.csproj -c Release -r osx-x64 --self-contained false /p:PublishTrimmed=false /p:PublishSingleFile=false --output ./publish/macos
-
-    - name: Create ZIP archive for Windows
+    - name: Create Windows archive
       if: runner.os == 'Windows'
       shell: powershell
       run: |
-        cd publish/windows
-        Compress-Archive -Path * -DestinationPath ../../PingDVD-Windows.zip
+        Compress-Archive -Path "target/${{ matrix.target }}/release/PingDVD.exe" -DestinationPath PingDVD-Windows.zip
 
     - name: Create .app bundle for macOS
       if: runner.os == 'macOS'
@@ -57,18 +53,18 @@ jobs:
       run: |
         APP=PingDVD.app
         mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-        cp -r publish/macos/ "$APP/Contents/MacOS/"
-        cp PingDVD/Info.plist "$APP/Contents/"
-        cp PingDVD/Assets/pingdvd.icns "$APP/Contents/Resources/"
+        cp "target/${{ matrix.target }}/release/PingDVD" "$APP/Contents/MacOS/PingDVD"
+        cp assets/Info.plist "$APP/Contents/"
+        cp assets/pingdvd.icns "$APP/Contents/Resources/"
         chmod +x "$APP/Contents/MacOS/PingDVD"
 
-    - name: Create ZIP archive for macOS
+    - name: Create macOS archive
       if: runner.os == 'macOS'
       shell: bash
       run: |
-        zip -r PingDVD-macOS.zip PingDVD.app
+        ditto -c -k --sequesterRsrc --keepParent PingDVD.app PingDVD-macOS.zip
 
-    - name: Upload ZIP artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: PingDVD-${{ runner.os }}
