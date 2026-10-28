@@ -31,6 +31,7 @@ const MUTED: Color32 = Color32::from_rgb(164, 179, 199);
 const SUCCESS: Color32 = Color32::from_rgb(102, 222, 164);
 const WARNING: Color32 = Color32::from_rgb(255, 195, 106);
 const ERROR: Color32 = Color32::from_rgb(255, 133, 143);
+const THRESHOLD: Color32 = Color32::from_rgb(197, 164, 255);
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
@@ -41,6 +42,8 @@ struct Settings {
     interval: f64,
     #[serde(alias = "TimeOut", alias = "Timeout")]
     timeout: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    latency_threshold_ms: Option<f64>,
 }
 
 impl Default for Settings {
@@ -49,6 +52,7 @@ impl Default for Settings {
             host: DEFAULT_HOST.to_owned(),
             interval: DEFAULT_INTERVAL_MS,
             timeout: DEFAULT_TIMEOUT_MS,
+            latency_threshold_ms: None,
         }
     }
 }
@@ -62,12 +66,21 @@ impl Settings {
         if !self.interval.is_finite() || !self.timeout.is_finite() {
             return Err("Interval and timeout must be finite numbers.".to_owned());
         }
+        if self
+            .latency_threshold_ms
+            .is_some_and(|value| !value.is_finite())
+        {
+            return Err("Latency threshold must be a finite number.".to_owned());
+        }
         Ok(Self {
             host: host
                 .parse::<IpAddr>()
                 .map_or_else(|_| host.to_ascii_lowercase(), |address| address.to_string()),
             interval: self.interval.clamp(1.0, MAX_SETTING_MS),
             timeout: self.timeout.clamp(1.0, MAX_SETTING_MS),
+            latency_threshold_ms: self
+                .latency_threshold_ms
+                .map(|value| value.clamp(1.0, MAX_SETTING_MS)),
         })
     }
 }
@@ -119,6 +132,58 @@ fn latency_stats(history: &VecDeque<PingOutcome>) -> Option<LatencyStats> {
         minimum,
         maximum,
     })
+}
+
+#[derive(Debug, Default, PartialEq)]
+struct PacketStats {
+    replies: usize,
+    timeouts: usize,
+    errors: usize,
+}
+
+impl PacketStats {
+    fn from_history(history: &VecDeque<PingOutcome>) -> Self {
+        let mut stats = Self::default();
+        for outcome in history {
+            match outcome {
+                PingOutcome::Reply(_) => stats.replies += 1,
+                PingOutcome::Timeout(_) => stats.timeouts += 1,
+                PingOutcome::Error(_) => stats.errors += 1,
+            }
+        }
+        stats
+    }
+
+    fn loss_percentage(&self) -> Option<f64> {
+        let packets = self.replies + self.timeouts;
+        (packets != 0).then(|| self.timeouts as f64 / packets as f64 * 100.0)
+    }
+}
+
+fn chart_range(stats: Option<&LatencyStats>, threshold: Option<f64>) -> (f64, f64) {
+    let (minimum, maximum) = stats.map_or((0.0, 10.0), |stats| {
+        let padding = ((stats.maximum - stats.minimum) as f64 * 0.15).max(5.0);
+        (
+            (stats.minimum as f64 - padding).max(0.0),
+            stats.maximum as f64 + padding,
+        )
+    });
+    threshold.map_or((minimum, maximum), |threshold| {
+        (
+            (threshold - 5.0).max(0.0).min(minimum),
+            (threshold + 5.0).max(maximum),
+        )
+    })
+}
+
+fn sample_at(rect: egui::Rect, pointer: Pos2, count: usize) -> Option<usize> {
+    if count == 0 || !rect.contains(pointer) || rect.width() <= 0.0 {
+        return None;
+    }
+    Some(
+        ((pointer.x - rect.left()) / rect.width() * count.saturating_sub(1) as f32).round()
+            as usize,
+    )
 }
 
 struct Notice {
@@ -243,7 +308,13 @@ impl PingApp {
         let Ok(settings) = self.settings.normalized() else {
             return;
         };
-        if !self.running || self.last_worker_settings.as_ref() == Some(&settings) {
+        if !self.running
+            || self.last_worker_settings.as_ref().is_some_and(|active| {
+                active.host == settings.host
+                    && active.interval == settings.interval
+                    && active.timeout == settings.timeout
+            })
+        {
             return;
         }
         if self
@@ -336,6 +407,17 @@ impl PingApp {
             return ("Stopped".to_owned(), MUTED);
         }
         match self.history.back() {
+            Some(PingOutcome::Reply(ms))
+                if self
+                    .settings
+                    .latency_threshold_ms
+                    .is_some_and(|limit| *ms as f64 > limit) =>
+            {
+                (
+                    format!("Running - Last reply: {ms} ms (above threshold)"),
+                    WARNING,
+                )
+            }
             Some(PingOutcome::Reply(ms)) => (format!("Running - Last reply: {ms} ms"), SUCCESS),
             Some(PingOutcome::Timeout(ms)) => (format!("Running - Timeout after {ms} ms"), WARNING),
             Some(PingOutcome::Error(error)) => (format!("Running - {error}"), ERROR),
@@ -362,13 +444,8 @@ impl PingApp {
             outer.max - Vec2::new(18.0, 30.0),
         );
         let stats = latency_stats(&self.history);
-        let (minimum, maximum) = stats.as_ref().map_or((0.0, 10.0), |stats| {
-            let padding = ((stats.maximum - stats.minimum) as f64 * 0.15).max(5.0);
-            (
-                (stats.minimum as f64 - padding).max(0.0),
-                stats.maximum as f64 + padding,
-            )
-        });
+        let threshold = self.settings.latency_threshold_ms;
+        let (minimum, maximum) = chart_range(stats.as_ref(), threshold);
         let y_for = |value: f64| {
             rect.bottom() - ((value - minimum) / (maximum - minimum)) as f32 * rect.height()
         };
@@ -402,6 +479,13 @@ impl PingApp {
             egui::FontId::proportional(11.0),
             MUTED,
         );
+        if let Some(threshold) = threshold {
+            let y = y_for(threshold);
+            painter.line_segment(
+                [Pos2::new(rect.left(), y), Pos2::new(rect.right(), y)],
+                Stroke::new(1.5_f32, THRESHOLD),
+            );
+        }
         if self.history.is_empty() {
             painter.text(
                 rect.center(),
@@ -426,7 +510,12 @@ impl PingApp {
                     if let Some(previous) = previous {
                         painter.line_segment([previous, point], Stroke::new(2.0_f32, ACCENT));
                     }
-                    painter.circle_filled(point, 2.0, ACCENT);
+                    let above_threshold = threshold.is_some_and(|limit| *value as f64 > limit);
+                    painter.circle_filled(
+                        point,
+                        if above_threshold { 3.5 } else { 2.0 },
+                        if above_threshold { THRESHOLD } else { ACCENT },
+                    );
                     previous = Some(point);
                 }
                 _ => {
@@ -456,6 +545,44 @@ impl PingApp {
                 );
                 x += 8.0;
             }
+        }
+        if let Some(index) = response
+            .hover_pos()
+            .and_then(|pointer| sample_at(rect, pointer, self.history.len()))
+        {
+            let x = if self.history.len() == 1 {
+                rect.center().x
+            } else {
+                rect.left() + index as f32 * x_step
+            };
+            painter.line_segment(
+                [Pos2::new(x, rect.top()), Pos2::new(x, rect.bottom())],
+                Stroke::new(1.0_f32, MUTED),
+            );
+            response.on_hover_ui(|ui| {
+                ui.strong(format!(
+                    "Attempt {} of {} in current window",
+                    index + 1,
+                    self.history.len()
+                ));
+                if let Some(active) = &self.last_worker_settings {
+                    ui.label(format!("Host: {}", active.host));
+                }
+                match &self.history[index] {
+                    PingOutcome::Reply(ms) => {
+                        ui.label(format!("Reply: {ms} ms"));
+                        if threshold.is_some_and(|limit| *ms as f64 > limit) {
+                            ui.colored_label(THRESHOLD, "Above latency threshold");
+                        }
+                    }
+                    PingOutcome::Timeout(ms) => {
+                        ui.colored_label(WARNING, format!("Timeout after {ms} ms (no reply)"));
+                    }
+                    PingOutcome::Error(error) => {
+                        ui.colored_label(ERROR, format!("Error: {error}"));
+                    }
+                }
+            });
         }
     }
 }
@@ -514,6 +641,7 @@ impl PingApp {
             .frame(egui::Frame::new().fill(SURFACE).inner_margin(14))
             .show(ctx, |ui| {
                 let compact = ui.available_width() < 720.0;
+                let compact_stats = compact || ctx.content_rect().height() < 500.0;
                 ui.horizontal(|ui| {
                     ui.heading("PingDVD");
                     ui.label(
@@ -611,7 +739,7 @@ impl PingApp {
                 ui.horizontal_wrapped(|ui| {
                     stat_card(
                         ui,
-                        compact,
+                        compact_stats,
                         "AVG",
                         stats
                             .as_ref()
@@ -619,7 +747,7 @@ impl PingApp {
                     );
                     stat_card(
                         ui,
-                        compact,
+                        compact_stats,
                         "LAST",
                         match self.history.back() {
                             Some(PingOutcome::Reply(ms)) => format!("{ms} ms"),
@@ -630,7 +758,7 @@ impl PingApp {
                     );
                     stat_card(
                         ui,
-                        compact,
+                        compact_stats,
                         "MIN",
                         stats
                             .as_ref()
@@ -638,13 +766,23 @@ impl PingApp {
                     );
                     stat_card(
                         ui,
-                        compact,
+                        compact_stats,
                         "MAX",
                         stats
                             .as_ref()
                             .map_or("--".to_owned(), |stats| format!("{} ms", stats.maximum)),
                     );
-                    stat_card(ui, compact, "SESSION", self.elapsed());
+                    stat_card(ui, compact_stats, "SESSION", self.elapsed());
+                });
+                let packets = PacketStats::from_history(&self.history);
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(format!("Attempts: {}/{}", self.history.len(), MAX_HISTORY_SIZE))
+                        .on_hover_text("Counters cover only the current window of up to 500 attempts.");
+                    ui.colored_label(SUCCESS, format!("Replies: {}", packets.replies));
+                    ui.colored_label(WARNING, format!("Timeouts: {}", packets.timeouts));
+                    ui.colored_label(ERROR, format!("Errors: {}", packets.errors));
+                    ui.label(packets.loss_percentage().map_or("Loss: --".to_owned(), |loss| format!("Loss: {loss:.1}%")))
+                        .on_hover_text("Timeouts / (replies + timeouts). DNS, process and other errors are excluded.");
                 });
             });
 
@@ -684,6 +822,16 @@ impl PingApp {
                     ui.colored_label(SUCCESS, "Average (dashed)");
                     ui.colored_label(WARNING, "Timeout (tick)");
                     ui.colored_label(ERROR, "Error (tick)");
+                    let mut enabled = self.settings.latency_threshold_ms.is_some();
+                    if ui.checkbox(&mut enabled, egui::RichText::new("Threshold").color(THRESHOLD))
+                        .on_hover_text("Display-only latency threshold. Purple markers and the status identify replies above it. Apply saves this setting.")
+                        .changed()
+                    {
+                        self.settings.latency_threshold_ms = enabled.then_some(100.0);
+                    }
+                    if let Some(threshold) = &mut self.settings.latency_threshold_ms {
+                        ui.add(egui::DragValue::new(threshold).range(1.0..=MAX_SETTING_MS).max_decimals(1).suffix(" ms"));
+                    }
                 });
                 ui.add_space(8.0);
                 self.draw_chart(ui);
@@ -1200,6 +1348,7 @@ mod tests {
             host: "  localhost  ".to_owned(),
             interval: -1.0,
             timeout: f64::INFINITY,
+            ..Settings::default()
         };
         assert!(settings.normalized().is_err());
         let settings = Settings {
@@ -1285,6 +1434,146 @@ mod tests {
                 maximum: 20
             })
         );
+        assert_eq!(
+            PacketStats::from_history(&app.history),
+            PacketStats {
+                replies: 2,
+                timeouts: MAX_HISTORY_SIZE - 3,
+                errors: 1
+            }
+        );
+    }
+
+    #[test]
+    fn loss_uses_only_replies_and_timeouts_and_handles_missing_packets() {
+        for (history, expected) in [
+            (VecDeque::new(), None),
+            (
+                VecDeque::from([PingOutcome::Error("DNS error".to_owned())]),
+                None,
+            ),
+            (VecDeque::from([PingOutcome::Reply(10)]), Some(0.0)),
+            (VecDeque::from([PingOutcome::Timeout(500)]), Some(100.0)),
+            (
+                VecDeque::from([
+                    PingOutcome::Reply(10),
+                    PingOutcome::Timeout(500),
+                    PingOutcome::Error("DNS error".to_owned()),
+                ]),
+                Some(50.0),
+            ),
+        ] {
+            let stats = PacketStats::from_history(&history);
+            assert_eq!(stats.loss_percentage(), expected);
+            assert_eq!(stats.replies + stats.timeouts + stats.errors, history.len());
+        }
+    }
+
+    #[test]
+    fn threshold_is_optional_persisted_validated_and_included_in_the_chart_range() {
+        let dir = TestDirectory::new();
+        let paths = [dir.file("settings.json")];
+        let mut settings = decode_settings(r#"{"Host":"localhost"}"#).unwrap();
+        assert_eq!(settings.latency_threshold_ms, None);
+        settings.latency_threshold_ms = Some(25.5);
+        write_settings_to(&settings, &paths).unwrap();
+        assert_eq!(
+            load_settings_from(&paths).0.latency_threshold_ms,
+            Some(25.5)
+        );
+        settings.latency_threshold_ms = None;
+        write_settings_to(&settings, &paths).unwrap();
+        assert_eq!(load_settings_from(&paths).0.latency_threshold_ms, None);
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            settings.latency_threshold_ms = Some(value);
+            assert!(settings.normalized().is_err());
+        }
+        let stats = LatencyStats {
+            average: 15.0,
+            minimum: 10,
+            maximum: 20,
+        };
+        for threshold in [1.0, 15.0, MAX_SETTING_MS] {
+            let (minimum, maximum) = chart_range(Some(&stats), Some(threshold));
+            assert!(minimum >= 0.0 && minimum < threshold && threshold < maximum);
+            assert!(minimum <= stats.minimum as f64 && maximum >= stats.maximum as f64);
+        }
+        let (minimum, maximum) = chart_range(None, Some(100.0));
+        assert!(minimum <= 100.0 && maximum > 100.0);
+    }
+
+    #[test]
+    fn threshold_warns_only_for_replies_strictly_above_the_limit() {
+        let mut app = app();
+        app.running = true;
+        app.settings.latency_threshold_ms = Some(100.0);
+        app.push_sample(PingOutcome::Reply(101));
+        assert_eq!(app.status().1, WARNING);
+        assert!(app.status().0.contains("above threshold"));
+        app.push_sample(PingOutcome::Reply(100));
+        assert_eq!(app.status().1, SUCCESS);
+        app.settings.latency_threshold_ms = None;
+        app.push_sample(PingOutcome::Reply(101));
+        assert_eq!(app.status().1, SUCCESS);
+    }
+
+    #[test]
+    fn chart_hover_selects_nearest_attempt_without_selecting_outside_the_plot() {
+        let rect = egui::Rect::from_min_max(Pos2::new(10.0, 10.0), Pos2::new(110.0, 110.0));
+        assert_eq!(sample_at(rect, rect.center(), 0), None);
+        assert_eq!(sample_at(rect, rect.center(), 1), Some(0));
+        assert_eq!(sample_at(rect, rect.left_top(), 3), Some(0));
+        assert_eq!(sample_at(rect, rect.center(), 3), Some(1));
+        assert_eq!(sample_at(rect, rect.right_bottom(), 3), Some(2));
+        assert_eq!(sample_at(rect, Pos2::new(9.0, 50.0), 3), None);
+        assert_eq!(sample_at(rect, Pos2::new(50.0, 111.0), 3), None);
+    }
+
+    #[test]
+    fn hovering_the_chart_shows_reply_timeout_and_error_details() {
+        let ctx = egui::Context::default();
+        let mut app = app();
+        app.settings.latency_threshold_ms = Some(5.0);
+        app.history = VecDeque::from([
+            PingOutcome::Reply(10),
+            PingOutcome::Timeout(500),
+            PingOutcome::Error("DNS error".to_owned()),
+        ]);
+        let mut time = 0.0;
+        for (x, expected) in [
+            (100.0, "Reply: 10 ms"),
+            (400.0, "Timeout after 500 ms (no reply)"),
+            (700.0, "Error: DNS error"),
+        ] {
+            let mut shown = false;
+            for frame in 0..4 {
+                time += 1.0;
+                let output = ctx.run(
+                    egui::RawInput {
+                        screen_rect: Some(egui::Rect::from_min_size(
+                            Pos2::ZERO,
+                            Vec2::new(800.0, 450.0),
+                        )),
+                        time: Some(time),
+                        events: if frame == 0 {
+                            vec![egui::Event::PointerMoved(Pos2::new(x, 200.0))]
+                        } else {
+                            Vec::new()
+                        },
+                        ..Default::default()
+                    },
+                    |ctx| {
+                        egui::CentralPanel::default().show(ctx, |ui| app.draw_chart(ui));
+                    },
+                );
+                shown |= output.shapes.iter().any(|shape| {
+                    matches!(
+                        &shape.shape, egui::Shape::Text(text) if text.galley.text() == expected
+                    )
+                });
+            }
+            assert!(shown, "missing tooltip: {expected}");
+        }
     }
 
     #[test]
@@ -1294,7 +1583,7 @@ mod tests {
         app.reset_session();
         let old_session = app.session_id;
         app.last_worker_settings = Some(app.settings.clone());
-        let (sender, receiver) = watch::channel(WorkerSettings {
+        let (sender, mut receiver) = watch::channel(WorkerSettings {
             settings: app.settings.clone(),
             session_id: old_session,
         });
@@ -1333,6 +1622,14 @@ mod tests {
         app.update_worker_settings();
         assert_eq!(app.session_id, session_id);
         assert_eq!(receiver.borrow().settings.timeout, 750.0);
+        let _ = receiver.borrow_and_update();
+        app.settings.latency_threshold_ms = Some(50.0);
+        app.update_worker_settings();
+        assert!(
+            !receiver.has_changed().unwrap(),
+            "a display-only change must not cancel a ping"
+        );
+        assert_eq!(app.session_id, session_id);
     }
 
     #[test]
@@ -1371,7 +1668,8 @@ mod tests {
             Settings {
                 host: "example.com".to_owned(),
                 interval: 1.0,
-                timeout: MAX_SETTING_MS
+                timeout: MAX_SETTING_MS,
+                ..Settings::default()
             }
         );
     }
@@ -1445,6 +1743,8 @@ mod tests {
         let ctx = egui::Context::default();
         configure_theme(&ctx);
         let mut app = app();
+        app.settings.latency_threshold_ms = Some(10.0);
+        app.last_worker_settings = Some(app.settings.clone());
         for size in [
             Vec2::new(480.0, 400.0),
             Vec2::new(700.0, 450.0),
@@ -1481,6 +1781,19 @@ mod tests {
                         })
                         .collect();
                     assert!(texts.contains(&"Stopped"));
+                    if size == Vec2::new(800.0, 450.0) {
+                        assert!(
+                            texts.contains(&"ms"),
+                            "the chart must remain visible at the initial window size"
+                        );
+                        assert!(!texts.contains(&"Enlarge the window to see the chart"));
+                    }
+                    for prefix in ["Attempts:", "Replies:", "Timeouts:", "Errors:", "Loss:"] {
+                        assert!(
+                            texts.iter().any(|text| text.starts_with(prefix)),
+                            "{size:?}: missing {prefix}"
+                        );
+                    }
                     for label in ["Host", "Timeout", "Interval", "Start", "Apply", "Reset"] {
                         assert!(texts.contains(&label), "{size:?}: missing {label}");
                         for shape in &output.shapes {

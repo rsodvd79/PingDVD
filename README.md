@@ -10,6 +10,9 @@ Applicazione desktop in Rust per monitorare la latenza di rete con un grafico in
 - Interfaccia scura con controlli adattivi, grafico con scala in ms, legenda e media tratteggiata.
 - Storico degli ultimi 500 tentativi: risposte, timeout ed errori sono distinti; il grafico non collega le risposte attraverso i tentativi falliti.
 - AVG, MIN e MAX calcolati sulle sole risposte valide dello storico; LAST mostra l'esito dell'ultimo tentativo. Nessun dato simulato all'avvio.
+- Contatori di tentativi, risposte, timeout ed errori e percentuale di packet loss nella finestra visualizzata.
+- Dettagli dei campioni al passaggio del mouse: posizione nella finestra, esito e latenza o motivo della mancata risposta.
+- Soglia visiva di latenza opzionale, con linea e campioni oltre soglia evidenziati.
 - Durata della sessione, congelata con Stop; una nuova sessione o un cambio host azzera storico e durata.
 - Configurazione di host, timeout e intervallo (1-100000 ms), con Start/Stop, Apply e Reset.
 - Salvataggio automatico delle impostazioni in `pingdvd.settings.json` accanto all'eseguibile; se non scrivibile, usa la cartella di configurazione utente.
@@ -24,6 +27,12 @@ Un host non valido viene segnalato senza sostituirlo automaticamente con Google:
 Timeout limita l'attesa complessiva di ciascun ping, inclusa la risoluzione del nome. Interval è la pausa **dopo** ogni tentativo, non il periodo fra gli inizi dei ping. L'asse orizzontale rappresenta i tentativi, non intervalli temporali uniformi. I segni arancioni/rossi indicano timeout/errori, non latenze.
 
 Nelle finestre compatte le statistiche diventano una fascia testuale; se non resta spazio sufficiente per un grafico leggibile viene mostrato un invito ad allargare la finestra.
+
+I contatori si riferiscono agli ultimi **500 tentativi**, non all'intera sessione. **Loss = timeout / (risposte + timeout)**: gli errori DNS, del processo o di altro tipo sono conteggiati separatamente. Se non ci sono né risposte né timeout, Loss mostra `--`, non una percentuale inventata.
+
+Passando il mouse nell'area del grafico viene selezionato il tentativo più vicino lungo l'asse orizzontale. Il tooltip mostra la sua posizione nella finestra (dal più vecchio al più recente), l'host e il risultato; la posizione non rappresenta un timestamp.
+
+**Threshold** attiva una soglia di latenza, inizialmente a 100 ms e disattivata per impostazione predefinita. Il valore è regolabile fra 1 e 100000 ms: la scala include sempre la linea viola e le risposte strettamente superiori vengono evidenziate, anche nello stato dell'ultimo ping. Apply salva la soglia insieme alle altre impostazioni; Reset la disattiva. La modifica è solo visiva: non riavvia i ping e non azzera lo storico. Non vengono inviate notifiche native.
 
 La configurazione viene cercata prima accanto all'eseguibile, poi nella cartella utente e infine nella directory corrente per compatibilità con installazioni precedenti. Il fallback utente è:
 
