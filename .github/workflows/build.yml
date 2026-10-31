@@ -2,17 +2,22 @@ name: Build and Release
 
 on:
   push:
-    branches: [ Avalonia_dotnet_8 ]
-    tags:
-      - 'v*'
-
   pull_request:
-    branches: [ Avalonia_dotnet_8 ]
 
   workflow_dispatch:
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.ts.outputs.timestamp }}
+    steps:
+    - name: Generate timestamp (yyyy.MM.dd.HH.mm)
+      id: ts
+      run: echo "timestamp=$(date -u +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+
   build:
+    needs: prepare
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -21,8 +26,10 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            platform: Windows
           - os: macos-latest
             target: x86_64-apple-darwin
+            platform: macOS
 
     steps:
     - uses: actions/checkout@v4
@@ -52,7 +59,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: powershell
       run: |
-        Compress-Archive -Path "target/${{ matrix.target }}/release/PingDVD.exe" -DestinationPath PingDVD-Windows.zip
+        Compress-Archive -Path "target/${{ matrix.target }}/release/PingDVD.exe" -DestinationPath "PingDVD.Windows.${{ needs.prepare.outputs.timestamp }}.zip"
 
     - name: Create .app bundle for macOS
       if: runner.os == 'macOS'
@@ -69,25 +76,25 @@ jobs:
       if: runner.os == 'macOS'
       shell: bash
       run: |
-        ditto -c -k --sequesterRsrc --keepParent PingDVD.app PingDVD-macOS.zip
+        ditto -c -k --sequesterRsrc --keepParent PingDVD.app "PingDVD.macOS.${{ needs.prepare.outputs.timestamp }}.zip"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: PingDVD-${{ runner.os }}
-        path: PingDVD-*.zip
+        name: PingDVD-${{ matrix.platform }}-${{ needs.prepare.outputs.timestamp }}
+        path: PingDVD.${{ matrix.platform }}.${{ needs.prepare.outputs.timestamp }}.zip
 
   release:
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/Avalonia_dotnet_8'
+    if: github.event_name == 'push'
     permissions:
       contents: write
 
     steps:
     - name: Generate tag name
       id: tag
-      run: echo "tag=v$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
+      run: echo "tag=v${{ needs.prepare.outputs.timestamp }}" >> $GITHUB_OUTPUT
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -99,5 +106,5 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.tag.outputs.tag }}
-        files: artifacts/PingDVD-*.zip
+        files: artifacts/PingDVD.*.zip
         generate_release_notes: true
